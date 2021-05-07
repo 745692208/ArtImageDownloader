@@ -1,2 +1,7 @@
 
 *.pyc
+.spec
+__pycache__
+ck
+config.ini
+.*
