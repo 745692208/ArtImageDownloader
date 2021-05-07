@@ -24,20 +24,21 @@ class Core:
         self.futures_list = []
         self.b_is_create_folder = True
         self.file_save_dir = ''    #文件保存路径
-
         
-    
     def run(self):
         # 复制剪切板内容并正则
+        #print('Code run')
         clip_content = pyperclip.paste()
         urls = re.findall(r'image_url(.*?),', clip_content)  # 正则表达式解析网页
         if len(urls) == 0:
-            self.log('[错误]复制的源码有问题，找不到图片下载地址')
+            self.log('[错误]复制的源码有问题，找不到图片下载地址；')
+            return
         try:
             title = re.findall(r'<title>(.*?)</title>', clip_content)[0]  # 正则表达式解析网页
             title = re.sub('[/\:*?"<>|]', "", title)    #去除标题特殊符号
         except:
-            self.log('[错误]复制的源码有问题，找不到标题')
+            self.log('[错误]复制的源码有问题，找不到标题；')
+            return
         
         #url处理
         for i,url in enumerate(urls):   
@@ -50,34 +51,35 @@ class Core:
         else:
             path = self.file_save_dir   #'E:\Python\down\'
 
-        self.log("解析完成，共计{}张图片".format(len(urls)))
-        print('run:{}'.format(path))
+        self.log("[正常]解析完成，共计{}张图片；".format(len(urls)))
+        #print('run:{}'.format(path))
         self.down_images(urls, path)   # 调用下载图片函数
 
     def down_images(self, urls, save_path):
+        #print('down_images')
         if not os.path.exists(save_path) and self.b_is_create_folder == True:   #创建目录
             os.makedirs(save_path, exist_ok=True)
         for i, url in enumerate(urls):  #循环下载图片
             time.sleep(1)
             self.futures_list.append(self.executor.submit(self.down_image, url, save_path, i))  # 异步加载，避免GUI卡顿
         futures.wait(self.futures_list)
-        self.log("========全部下载完成========")
+        self.log("[正常]下载任务已完成；")
 
     def down_image(self, url, save_path, index):
-        '''
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36 Edg/90.0.818.51'}
-        proxies={'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'}
-        r = requests.get(url, headers=headers, proxies=proxies)
-        print(str(r.status_code))
-        '''
-        r = self.session.get(url)  #下载图片
-
+        #print('down_image')
+        self.log('[正常]正在下载第{}张，请稍等；'.format(index+1))
+        try:
+            r = self.session.get(url)  #下载图片
+        except:
+            self.log('[错误]下载失败，请检查网络设置；')
+            return
+        
         # 路径处理
         file_name = url.split('/')[-1]  #获取图片名字 gabriel-dias-maia-principal.jpg
         file_name = file_name.rsplit('.', 1)[0] + '-' + str(index) + '.' + file_name.rsplit('.', 1)[1]  #图片名字加index gabriel-dias-maia-principal-0.jpg
         path = os.path.join(save_path, file_name)   #保存路径和文件名字合并
-        print('down_image:{}'.format(path))
+        #print('down_image:{}'.format(path))
         # 写入文件
         with open(path, 'wb') as f:
             f.write(r.content)
-        self.log('[完成]{}'.format(path))
+        self.log('[完成]{}；'.format(path))
