@@ -75,7 +75,7 @@ class App(Frame):
         btn_run.pack(side=LEFT)
         self.ckbtn_create_folder = Checkbutton(self.index1, text='创建文件夹', variable=self.ckbtn_create_folder_var,  command=self.ckbtn_create_folder_def)
         self.ckbtn_create_folder.pack(side=LEFT)
-        Checkbutton(self.index1, text='Is 2D?').pack(side=LEFT)
+        #Checkbutton(self.index1, text='Is 2D?').pack(side=LEFT)
         Label(self.index2, text='Logs:').pack(side=LEFT)
 
         self.logs_box = Text(self.index3)
