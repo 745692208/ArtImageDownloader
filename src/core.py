@@ -156,6 +156,5 @@ if __name__ == '__main__':
     core.b_is_down_video = True
     core.b_is_custom_name = True
     core.b_is_create_folder = True
-    # core.get_work('https://www.artstation.com/artwork/5X9mYA')
     core.get_work('https://www.artstation.com/artwork/5X9mYA')
     # core.get_user_works('https://www.artstation.com/szh1137544509')
