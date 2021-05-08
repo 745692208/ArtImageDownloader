@@ -10,6 +10,9 @@ import pyperclip
 import config
 from core import Core
 
+c = config.Config()
+conf_dir = c.make_conf_dir('ArtStationImageDownloader')
+
 
 class App(Frame):
     def app_log(self, value):
@@ -175,8 +178,6 @@ class App(Frame):
 
 
 if __name__ == '__main__':
-    c = config.Config()
-    conf_dir = c.make_conf_dir('ArtStationImageDownloader')
     # 显示GUI
     app = App(version=' GUI Test')
     app.mainloop()
