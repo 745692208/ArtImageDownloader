@@ -70,7 +70,9 @@ class Core:
             self.log('[错误]下载失败，请检查网络设置；')
             return
         assets = j['assets']    # 获取资产
-        del assets[1]
+        for i in assets:    # 删除多余资产
+            if i['asset_type'] == 'cover':
+                del assets[i]
         if self.b_is_create_folder:
             title = j['title'].strip()   # 获取标题
             title = re.sub(r'[/\:*?"<>|]', "", title)    # 去除标题特殊符号
