@@ -83,14 +83,14 @@ class App(Frame):
             self.ckbtn_create_folder_var.set(int(config.read_config(
                 conf_dir, 'Base', 'ckbtn_create_folder_var')))
         except Exception:
-            self.ckbtn_create_folder_var.set(0)
+            self.ckbtn_create_folder_var.set(1)
 
         self.ckbtn_down_video_var = IntVar()
         try:
             self.ckbtn_down_video_var.set(int(config.read_config(
                 conf_dir, 'Base', 'ckbtn_down_video_var')))
         except Exception:
-            self.ckbtn_down_video_var.set(0)
+            self.ckbtn_down_video_var.set(1)
 
         self.ckbtn_custom_name_var = IntVar()
         try:
