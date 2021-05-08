@@ -25,6 +25,8 @@ class Core:
         self.futures_list = []
         self.b_is_create_folder = True
         self.b_is_down_video = False
+        self.b_is_custom_name = True
+        self.entry_path = ''    # 文件保存路径
         self.save_path = ''    # 文件保存路径
 
     def get_user_works(self, url):  # 获取用户的所有作品
@@ -68,31 +70,37 @@ class Core:
             self.log('[错误]下载失败，请检查网络设置；')
             return
         assets = j['assets']    # 获取资产
+        del assets[1]
         if self.b_is_create_folder:
             title = j['title'].strip()   # 获取标题
             title = re.sub(r'[/\:*?"<>|]', "", title)    # 去除标题特殊符号
-            self.save_path = os.path.join(self.save_path, title)
+            self.save_path = os.path.join(self.entry_path, title)
             if not os.path.exists(self.save_path):   # 创建目录
                 os.makedirs(self.save_path, exist_ok=True)
         # 3 资产数据分析
         self.log('分析完毕，作品：{}，现进行下载...'.format(j['title'].strip()))
         futures_list = []
         for i, asset in enumerate(assets):
+            # time.sleep(0.1)
             if asset['asset_type'] == 'image':
                 url = asset['image_url']
                 file_name = self.get_file_name(asset['image_url'], i, 1)
+                file_name = self.custom_name(j, file_name, i+1)
                 futures_list.append(
                     self.executor.submit(self.down_file, url, file_name))
             if asset['asset_type'] == 'video' and self.b_is_down_video:
                 url = re.findall(r'src="(.*?)"', asset['player_embedded'])[0]
+                file_name = self.custom_name(j, 'name.mp4', i+1)
                 futures_list.append(
-                    self.executor.submit(self.down_youtube_video, url))
+                    self.executor.submit(
+                        self.down_youtube_video, url, file_name))
             if asset['asset_type'] == 'video_clip' and self.b_is_down_video:
                 url = re.findall(r"src='(.*?)'", asset['player_embedded'])[0]
                 r = self.session.get(url)
                 # 获取可下载的网页地址
                 source_media = re.findall(r'src="(.*?)" type=', r.text)[0]
                 file_name = self.get_file_name(source_media, i, 0)
+                file_name = self.custom_name(j, file_name, i+1)
                 futures_list.append(
                     self.executor.submit(
                         self.down_file, source_media, file_name))
@@ -119,25 +127,35 @@ class Core:
         :param url, str, 输入网页地址，如 https://cdna.artstation.com/p/1.jpg；
         :param file_name, str, 文件保存名字；
         '''
-        # self.log('正在下载，地址：{}...'.format(url))
         r = self.session.get(url)  # 下载图片
         path = os.path.join(self.save_path, file_name)   # 保存路径和文件名字合并
         with open(path, 'wb') as f:
             f.write(r.content)
         self.log('完成下载，地址：{}'.format(url))
 
-    def down_youtube_video(self, url):   # 下载视频
+    def down_youtube_video(self, url, file_name):   # 下载视频
         '''
         :param url, str, 输入网页地址，如https://www.youtube.com/watch?v=3uVvUD-5Vl4；
         '''
-        # self.log('正在下载，地址：{}...'.format(url))
-        YouTube(url).streams.first().download(self.save_path)
+        YouTube(url).streams.first().download(self.save_path, file_name)
         self.log('完成下载，地址：{}'.format(url))
+
+    def custom_name(self, j, file_name, index):
+        if self.b_is_custom_name:
+            username = j['user']['username']
+            work_id = j['hash_id']
+            file_name = file_name.rsplit('.', 1)
+            return '{}-{}-{}.{}'.format(username, work_id, index, file_name[1])
+        else:
+            return file_name
 
 
 if __name__ == '__main__':
     core = Core()
-    # core.get_user_works('https://www.artstation.com/wangchen-cg')
-    core.save_path = r'D:\Python\down\test'
-    # core.b_is_create_folder = False
+    core.entry_path = r'E:\Python\down\test'
+    core.b_is_down_video = True
+    core.b_is_custom_name = True
+    core.b_is_create_folder = True
+    # core.get_work('https://www.artstation.com/artwork/5X9mYA')
     core.get_work('https://www.artstation.com/artwork/5X9mYA')
+    # core.get_user_works('https://www.artstation.com/szh1137544509')

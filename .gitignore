@@ -5,3 +5,6 @@ __pycache__
 ck
 config.ini
 .*
+.spec
+dist
+build

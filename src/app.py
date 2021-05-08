@@ -8,7 +8,7 @@ from tkinter import TOP, LEFT, BOTH, X, Y, END, IntVar  # BOTTOM
 import pyperclip
 
 import config
-from core2 import Core
+from core import Core
 
 
 class App(Frame):
@@ -23,7 +23,7 @@ class App(Frame):
         print('browse')
         dir = os.path.normpath(filedialog.askdirectory())
         if dir:
-            config.write_config('config.ini', 'Base', 'save_path', dir)
+            config.write_config(conf_dir, 'Base', 'save_path', dir)
             self.save_path = dir
             self.entry_path.delete(0, END)
             self.entry_path.insert(0, self.save_path)
@@ -38,8 +38,9 @@ class App(Frame):
     def set_param(self):
         self.core.b_is_create_folder = self.ckbtn_create_folder_var.get()
         self.core.b_is_down_video = self.ckbtn_down_video_var.get()
-        self.core.save_path = self.entry_path.get()
-        config.write_config('config.ini', 'Base', 'save_path',
+        self.core.b_is_custom_name = self.ckbtn_custom_name_var.get()
+        self.core.entry_path = self.entry_path.get()
+        config.write_config(conf_dir, 'Base', 'save_path',
                             self.entry_path.get())
 
     def get_user_works(self):
@@ -61,28 +62,39 @@ class App(Frame):
             messagebox.showerror("错误", "请输入正确的文件夹路径！")
 
     def ckbtn_create_folder_def(self):
-        config.write_config('config.ini', 'Base', 'ckbtn_create_folder_var',
+        config.write_config(conf_dir, 'Base', 'ckbtn_create_folder_var',
                             str(self.ckbtn_create_folder_var.get()))
 
     def ckbtn_down_videor_def(self):
-        config.write_config('config.ini', 'Base', 'ckbtn_down_video_var',
+        config.write_config(conf_dir, 'Base', 'ckbtn_down_video_var',
                             str(self.ckbtn_down_video_var.get()))
+
+    def ckbtn_custom_name_def(self):
+        config.write_config(conf_dir, 'Base', 'ckbtn_custom_name_var',
+                            str(self.ckbtn_custom_name_var.get()))
 
     def createWidgets(self):
         ''' ======== GUI设置 ======== '''
         self.ckbtn_create_folder_var = IntVar()
         try:
             self.ckbtn_create_folder_var.set(int(config.read_config(
-                'config.ini', 'Base', 'ckbtn_create_folder_var')))
+                conf_dir, 'Base', 'ckbtn_create_folder_var')))
         except Exception:
             self.ckbtn_create_folder_var.set(0)
 
         self.ckbtn_down_video_var = IntVar()
         try:
             self.ckbtn_down_video_var.set(int(config.read_config(
-                'config.ini', 'Base', 'ckbtn_down_video_var')))
+                conf_dir, 'Base', 'ckbtn_down_video_var')))
         except Exception:
             self.ckbtn_down_video_var.set(0)
+
+        self.ckbtn_custom_name_var = IntVar()
+        try:
+            self.ckbtn_custom_name_var.set(int(config.read_config(
+                conf_dir, 'Base', 'ckbtn_custom_name_var')))
+        except Exception:
+            self.ckbtn_custom_name_var.set(1)
 
         '''控件'''
         self.index1 = Frame(self.root)
@@ -108,21 +120,27 @@ class App(Frame):
             self.index1, text='爬取用户',
             command=lambda: self.executor_ui.submit(self.get_user_works))\
             .pack(side=LEFT)
+        self.ckbtn_custom_name = Checkbutton(
+            self.index1,
+            text='自定义命名',
+            variable=self.ckbtn_custom_name_var,
+            command=self.ckbtn_custom_name_def
+        )
+        self.ckbtn_custom_name.pack(side=LEFT)
         self.ckbtn_create_folder = Checkbutton(
             self.index1,
             text='创建文件夹',
             variable=self.ckbtn_create_folder_var,
             command=self.ckbtn_create_folder_def
-            )
+        )
         self.ckbtn_create_folder.pack(side=LEFT)
         self.ckbtn_down_video = Checkbutton(
             self.index1,
             text='下载视频',
             variable=self.ckbtn_down_video_var,
             command=self.ckbtn_down_videor_def
-            )
+        )
         self.ckbtn_down_video.pack(side=LEFT)
-        # Checkbutton(self.index1, text='Is 2D?').pack(side=LEFT)
         Label(self.index2, text='Logs:').pack(side=LEFT)
 
         self.logs_box = Text(self.index3)
@@ -135,7 +153,8 @@ class App(Frame):
         self.scrollbar.config(command=self.logs_box.yview)
         self.logs_box.config(yscrollcommand=self.scrollbar.set)
 
-        self.lbl_status = Label(self.root, text='By:levosaber')
+        self.lbl_status = Label(
+            self.root, text='使用说明：复制网址然后使用爬取功能即可 By:levosaber')
         self.lbl_status.pack(side=LEFT, fill=X, expand=True)
 
     def __init__(self, version):
@@ -149,13 +168,16 @@ class App(Frame):
         self.pack()
         try:
             self.save_path = config.read_config(
-                'config.ini', 'Base', 'save_path')
+                conf_dir, 'Base', 'save_path')
         except Exception:
             self.save_path = ''
         self.createWidgets()
 
 
 if __name__ == '__main__':
+    c = config.Config()
+    conf_dir = c.make_conf_dir('ArtStationImageDownloader')
     # 显示GUI
     app = App(version=' GUI Test')
     app.mainloop()
+    exit()

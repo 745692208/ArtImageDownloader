@@ -1,38 +1,24 @@
-#!/usr/bin/python
-# -*- coding:utf-8 -*-
-# author: lingyue.wkl
-# desc: use to read ini
-# ---------------------
-# 2012-02-18 created
-# 2012-09-02 changed for class support
-
-# ---------------------
-
-import sys
+import os
 import configparser
+import ctypes
+from ctypes.wintypes import MAX_PATH
 
 
 class Config:
-    def __init__(self, path):
-        self.path = path
-        self.cf = configparser.ConfigParser()
-        self.cf.read(self.path)
-
-    def get(self, field, key):
-        result = ""
-        try:
-            result = self.cf.get(field, key)
-        except Exception():
-            result = ""
-        return result
-
-    def set(self, filed, key, value):
-        try:
-            self.cf.set(field, key, value)
-            self.cf.write(open(self.path, 'w'))
-        except Exception():
-            return False
-        return True
+    def make_conf_dir(self, name):
+        # 获取我的文档路径，并创建目录
+        dll = ctypes.windll.shell32
+        buf = ctypes.create_unicode_buffer(MAX_PATH + 1)
+        if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
+            print(buf.value)
+            try:
+                os.mkdir(buf.value + r"\{}".format(name))
+            except Exception:
+                print("")
+        else:
+            print("Failure!")
+        flie_path = buf.value + r"\{}\Config.ini".format(name)
+        return flie_path
 
 
 def read_config(config_file_path, field, key):
@@ -64,14 +50,4 @@ def write_config(config_file_path, field, key, value):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        sys.exit(1)
-
-    config_file_path = sys.argv[1]
-    field = sys.argv[2]
-    key = sys.argv[3]
-    if len(sys.argv) == 4:
-        print(read_config(config_file_path, field, key))
-    else:
-        value = sys.argv[4]
-        write_config(config_file_path, field, key, value)
+    print('test')

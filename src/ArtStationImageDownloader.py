@@ -8,9 +8,11 @@ __version__ = "1.0.0"
 
 from app import App
 
+
 def main():
-    app = App(version=__version__)  #运行GUI
+    app = App(version=__version__)  # 运行GUI
     app.mainloop()  # 进入主循环，程序运行
+
 
 if __name__ == '__main__':
     main()
