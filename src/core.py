@@ -70,7 +70,7 @@ class Core:
         self.log('[正常]正在下载第{}张，请稍等；'.format(index+1))
         try:
             r = self.session.get(url)  #下载图片
-        except:
+        except Exception:
             self.log('[错误]下载失败，请检查网络设置；')
             return
         
