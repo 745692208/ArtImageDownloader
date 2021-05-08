@@ -1,10 +1,9 @@
 
 *.pyc
-.spec
+*.spec
 __pycache__
 ck
 config.ini
 .*
-.spec
 dist
 build
