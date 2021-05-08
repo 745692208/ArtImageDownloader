@@ -22,7 +22,7 @@ class Config:
         result = ""
         try:
             result = self.cf.get(field, key)
-        except:
+        except Exception():
             result = ""
         return result
 
@@ -30,7 +30,7 @@ class Config:
         try:
             self.cf.set(field, key, value)
             self.cf.write(open(self.path, 'w'))
-        except:
+        except Exception():
             return False
         return True
 
