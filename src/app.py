@@ -5,9 +5,10 @@ from tkinter import Tk, Frame, Label, Button, Scrollbar, Text, Entry
 from tkinter import Checkbutton, messagebox, filedialog
 from tkinter import TOP, LEFT, BOTH, X, Y, END, IntVar  # BOTTOM
 # from tkinter import ttk
+import pyperclip
 
 import config
-from core import Core
+from core2 import Core
 
 
 class App(Frame):
@@ -22,25 +23,36 @@ class App(Frame):
         print('browse')
         dir = os.path.normpath(filedialog.askdirectory())
         if dir:
-            config.write_config('config.ini', 'Base', 'save_dir', dir)
+            config.write_config('config.ini', 'Base', 'save_path', dir)
             self.save_path = dir
             self.entry_path.delete(0, END)
             self.entry_path.insert(0, self.save_path)
 
-    def run(self):
-        print('run')
+    def check_dir(self):
         if os.path.exists(self.entry_path.get()):
-            self.core.b_is_create_folder = self.ckbtn_create_folder_var.get()
-            self.core.file_save_dir = self.entry_path.get()
-            self.core.run()
-            print('run2')
-            config.write_config(
-                'config.ini', 'Base', 'ckbtn_create_folder_var',
-                self.ckbtn_create_folder_var.get())
-            config.write_config(
-                'config.ini', 'Base', 'save_dir', self.entry_path.get())
+            return True
         else:
             messagebox.showerror("错误", "请输入正确的文件夹路径！")
+            return False
+
+    def set_param(self):
+        self.core.b_is_create_folder = self.ckbtn_create_folder_var.get()
+        self.core.b_is_down_video = self.ckbtn_down_video_var.get()
+        self.core.save_path = self.entry_path.get()
+        config.write_config('config.ini', 'Base', 'save_path',
+                            self.entry_path.get())
+
+    def get_user_works(self):
+        print('get_user_works ui', pyperclip.paste())
+        if self.check_dir():
+            self.set_param()
+            self.core.get_user_works(pyperclip.paste())
+
+    def get_work(self):
+        print('get_work ui', pyperclip.paste())
+        if self.check_dir():
+            self.set_param()
+            self.core.get_work(pyperclip.paste())
 
     def open_folder(self):
         try:
@@ -52,6 +64,10 @@ class App(Frame):
         config.write_config('config.ini', 'Base', 'ckbtn_create_folder_var',
                             str(self.ckbtn_create_folder_var.get()))
 
+    def ckbtn_down_videor_def(self):
+        config.write_config('config.ini', 'Base', 'ckbtn_down_video_var',
+                            str(self.ckbtn_down_video_var.get()))
+
     def createWidgets(self):
         ''' ======== GUI设置 ======== '''
         self.ckbtn_create_folder_var = IntVar()
@@ -60,6 +76,13 @@ class App(Frame):
                 'config.ini', 'Base', 'ckbtn_create_folder_var')))
         except Exception:
             self.ckbtn_create_folder_var.set(0)
+
+        self.ckbtn_down_video_var = IntVar()
+        try:
+            self.ckbtn_down_video_var.set(int(config.read_config(
+                'config.ini', 'Base', 'ckbtn_down_video_var')))
+        except Exception:
+            self.ckbtn_down_video_var.set(0)
 
         '''控件'''
         self.index1 = Frame(self.root)
@@ -79,10 +102,12 @@ class App(Frame):
             .pack(side=LEFT)
         Button(
             self.index1, text='爬取单个作品',
-            command=lambda: self.executor_ui.submit(self.run)).pack(side=LEFT)
+            command=lambda: self.executor_ui.submit(self.get_work))\
+            .pack(side=LEFT)
         Button(
             self.index1, text='爬取用户',
-            command=lambda: self.executor_ui.submit(self.run)).pack(side=LEFT)
+            command=lambda: self.executor_ui.submit(self.get_user_works))\
+            .pack(side=LEFT)
         self.ckbtn_create_folder = Checkbutton(
             self.index1,
             text='创建文件夹',
@@ -90,6 +115,13 @@ class App(Frame):
             command=self.ckbtn_create_folder_def
             )
         self.ckbtn_create_folder.pack(side=LEFT)
+        self.ckbtn_down_video = Checkbutton(
+            self.index1,
+            text='下载视频',
+            variable=self.ckbtn_down_video_var,
+            command=self.ckbtn_down_videor_def
+            )
+        self.ckbtn_down_video.pack(side=LEFT)
         # Checkbutton(self.index1, text='Is 2D?').pack(side=LEFT)
         Label(self.index2, text='Logs:').pack(side=LEFT)
 
@@ -117,7 +149,7 @@ class App(Frame):
         self.pack()
         try:
             self.save_path = config.read_config(
-                'config.ini', 'Base', 'save_dir')
+                'config.ini', 'Base', 'save_path')
         except Exception:
             self.save_path = ''
         self.createWidgets()
