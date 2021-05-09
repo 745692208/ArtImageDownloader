@@ -165,7 +165,7 @@ class App(Frame):
         master = Tk()
         Frame.__init__(self, master)    # 这个能解决报错，但为什么，不懂。
         master.title("ArtStation Image Downloader " + version)
-        master.iconbitmap(r'.\icon\icon.ico')
+        # master.iconbitmap(r'.\icon\icon.ico')
         self.core = Core()
         self.root = master
         self.executor_ui = futures.ThreadPoolExecutor(1)
