@@ -1,2 +1,2 @@
 # ArtStationImageDownloader
- 下载a站图片
+ 批量下载A站图片。
