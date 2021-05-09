@@ -1,9 +1,8 @@
-
 *.pyc
 *.spec
+*.ini
+.*
 __pycache__
 ck
-config.ini
-.*
 dist
 build

@@ -1,2 +1,2 @@
-pyinstaller -y --windowed -F .\src\ArtStationImageDownloader.py
+pyinstaller -y --windowed -F -i .\icon\icon.ico .\src\ArtStationImageDownloader.py
 @pause
