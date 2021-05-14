@@ -25,7 +25,7 @@ class App(Frame):
     def browse(self):
         print('browse')
         dir = os.path.normpath(filedialog.askdirectory())
-        if dir:
+        if dir != '.':
             config.write_config(conf_dir, 'Base', 'save_path', dir)
             self.save_path = dir
             self.entry_path.delete(0, END)
@@ -35,8 +35,12 @@ class App(Frame):
         if os.path.exists(self.entry_path.get()):
             return True
         else:
-            messagebox.showerror("错误", "请输入正确的文件夹路径！")
-            return False
+            try:
+                os.makedirs(self.entry_path.get(), exist_ok=True)
+                return True
+            except Exception:
+                messagebox.showerror("错误", "请输入正确的文件夹路径！")
+                return False
 
     def set_param(self):
         self.core.b_is_create_folder = self.ckbtn_create_folder_var.get()
@@ -63,6 +67,11 @@ class App(Frame):
             os.startfile(self.entry_path.get())
         except Exception:
             messagebox.showerror("错误", "请输入正确的文件夹路径！")
+
+    def open_latest_folder(self):
+        path = self.core.save_path
+        if path != '':
+            os.startfile(path)
 
     def ckbtn_create_folder_def(self):
         config.write_config(conf_dir, 'Base', 'ckbtn_create_folder_var',
@@ -104,9 +113,11 @@ class App(Frame):
         self.index1.pack(side=TOP, fill=X)
         self.index2 = Frame(self.root)
         self.index2.pack(side=TOP, fill=X)
+        self.f_logs = Frame(self.root)
+        self.f_logs.pack(side=TOP, fill=X)
         self.index3 = Frame(self.root)
         self.index3.pack(side=TOP, fill=BOTH, expand=True)
-
+        # 第一行
         Label(self.index1, text='Save Path').pack(side=LEFT)
         self.entry_path = Entry(self.index1)
         self.entry_path.pack(side=LEFT, fill=X, expand=True)
@@ -115,37 +126,44 @@ class App(Frame):
         Button(self.index1, text='浏览', command=self.browse).pack(side=LEFT)
         Button(self.index1, text='打开文件夹', command=self.open_folder)\
             .pack(side=LEFT)
-        Button(
-            self.index1, text='爬取单个作品',
-            command=lambda: self.executor_ui.submit(self.get_work))\
-            .pack(side=LEFT)
-        Button(
-            self.index1, text='爬取用户',
-            command=lambda: self.executor_ui.submit(self.get_user_works))\
-            .pack(side=LEFT)
+        # 第二行
         self.ckbtn_custom_name = Checkbutton(
-            self.index1,
+            self.index2,
             text='自定义命名',
             variable=self.ckbtn_custom_name_var,
             command=self.ckbtn_custom_name_def
         )
         self.ckbtn_custom_name.pack(side=LEFT)
         self.ckbtn_create_folder = Checkbutton(
-            self.index1,
+            self.index2,
             text='创建文件夹',
             variable=self.ckbtn_create_folder_var,
             command=self.ckbtn_create_folder_def
         )
         self.ckbtn_create_folder.pack(side=LEFT)
         self.ckbtn_down_video = Checkbutton(
-            self.index1,
+            self.index2,
             text='下载视频',
             variable=self.ckbtn_down_video_var,
             command=self.ckbtn_down_videor_def
         )
         self.ckbtn_down_video.pack(side=LEFT)
-        Label(self.index2, text='Logs:').pack(side=LEFT)
 
+        Button(
+            self.index2, text='爬取单个作品',
+            command=lambda: self.executor_ui.submit(self.get_work))\
+            .pack(side=LEFT)
+        Button(
+            self.index2, text='爬取用户',
+            command=lambda: self.executor_ui.submit(self.get_user_works))\
+            .pack(side=LEFT)
+        Button(
+            self.index2, text='打开最新保存文件夹',
+            command=self.open_latest_folder)\
+            .pack(side=LEFT, fill=X, expand=True)
+        # 日志行
+        Label(self.f_logs, text='Logs:').pack(side=LEFT)
+        # 第三行
         self.logs_box = Text(self.index3)
         self.logs_box.pack(side=LEFT, fill=BOTH, expand=True)
         self.logs_box.configure(state="disabled")

@@ -27,6 +27,7 @@ class Core:
         self.b_is_down_video = True
         self.b_is_custom_name = True
         self.entry_path = ''    # 文件保存路径
+        self.save_path = ''     # 保存路径
 
     def get_user_works(self, url):  # 获取用户的所有作品
         '''
@@ -49,21 +50,21 @@ class Core:
             data += j['data']
             if page > total_count / 50:
                 break
-        self.log('分析完毕，作者：{}，共计{}个作品，现进行作品分析...'.format(username, len(data)))
+        self.log('分析完毕，作者：{}，共计{}个作品，现进行作品分析... '.format(username, len(data)))
         futures_list = []
         for wrok in data:
             futures_list.append(
                 self.executor.submit(
                     self.get_work, wrok['permalink']))
         futures.wait(futures_list)
-        self.log("[正常]爬取用户作品的下载任务已全部完成；")
+        self.log("[正常]爬取用户作品的下载任务已全部完成；\n")
 
     def get_work(self, url):
         '''
         获取单独作品
         :param url, str, 网页地址，比如：https://www.artstation.com/artwork/5X9mYA
         '''
-        self.log('分析中，请不要进行操作...')
+        self.log('分析网址：{}中，请不要进行操作...'.format(url))
         # 1 获取json数据网址
         url = 'https://www.artstation.com/projects/{}.json'.format(
             url.rsplit('/', 1)[1])
@@ -81,12 +82,14 @@ class Core:
         for i, asset in enumerate(assets):    # 删除多余资产
             if asset['asset_type'] == 'cover':
                 del assets[i]
+        # 创建文件夹
+        self.save_path = self.entry_path
         if self.b_is_create_folder:
             title = j['title'].strip()   # 获取标题
             title = re.sub(r'[/\:*?"<>|]', "", title)    # 去除标题特殊符号
-            save_path = os.path.join(self.entry_path, title)
-            if not os.path.exists(save_path):   # 创建目录
-                os.makedirs(save_path, exist_ok=True)
+            self.save_path = os.path.join(self.entry_path, title)
+            if not os.path.exists(self.save_path):   # 创建目录
+                os.makedirs(self.save_path, exist_ok=True)
         # 3 资产数据分析
         self.log('分析完毕，作品：{}，现进行下载...'.format(j['title'].strip()))
         futures_list = []
@@ -98,13 +101,15 @@ class Core:
                 file_name = self.custom_name(j, file_name, i+1)
                 futures_list.append(
                     self.executor.submit(
-                        self.down_file, url, file_name, save_path))
+                        self.down_file, url, file_name, self.save_path))
             if asset['asset_type'] == 'video' and self.b_is_down_video:
                 url = re.findall(r'src="(.*?)"', asset['player_embedded'])[0]
                 file_name = self.custom_name(j, 'name.mp4', i+1)
+                self.log('这是个视频，下载比较忙，亲耐心等候。')
                 futures_list.append(
                     self.executor.submit(
-                        self.down_youtube_video, url, file_name, save_path))
+                        self.down_youtube_video,
+                        url, file_name, self.save_path))
             if asset['asset_type'] == 'video_clip' and self.b_is_down_video:
                 url = re.findall(r"src='(.*?)'", asset['player_embedded'])[0]
                 r = self.session.get(url)
@@ -112,11 +117,13 @@ class Core:
                 source_media = re.findall(r'src="(.*?)" type=', r.text)[0]
                 file_name = self.get_file_name(source_media, i, 0)
                 file_name = self.custom_name(j, file_name, i+1)
+                self.log('这是个视频，下载比较忙，亲耐心等候。')
                 futures_list.append(
                     self.executor.submit(
-                        self.down_file, source_media, file_name, save_path))
+                        self.down_file,
+                        source_media, file_name, self.save_path))
         futures.wait(futures_list)
-        self.log("[正常]下载任务已完成；")
+        self.log("[正常]下载任务已完成；\n")
 
     def get_file_name(self, url, index, has_mask):
         '''
@@ -163,7 +170,7 @@ class Core:
 
 if __name__ == '__main__':
     core = Core()
-    core.entry_path = r'E:\Python\down\test'
+    core.entry_path = r'D:\Python\down\test\test2'
     core.b_is_down_video = True
     core.b_is_custom_name = True
     core.b_is_create_folder = True
