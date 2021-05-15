@@ -1,12 +1,12 @@
 import os
+import time
 from concurrent import futures
-# 引入Tkinter工具包
-from tkinter import Tk, Frame, Label, Button, Scrollbar, Text, Entry
+from threading import Timer
+from tkinter import StringVar, Tk, Frame, Label, Button, Scrollbar, Text, Entry
 from tkinter import Checkbutton, messagebox, filedialog
 from tkinter import TOP, LEFT, BOTH, X, Y, END, IntVar  # BOTTOM
-# from tkinter import ttk
-import pyperclip
 
+import pyperclip
 import config
 from core import Core
 
@@ -16,7 +16,8 @@ conf_dir = c.make_conf_dir('ArtStationImageDownloader')
 
 class App(Frame):
     def app_log(self, value):
-        print('log')
+        time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        value = '[{}]{}'.format(time_date, value)
         self.logs_box.configure(state="normal")
         self.logs_box.insert(END, value + '\n')
         self.logs_box.see(END)
@@ -72,7 +73,10 @@ class App(Frame):
         path = self.core.save_path
         if path != '':
             os.startfile(path)
+        else:
+            messagebox.showinfo('无最新保存', '本次运行没有保存过作品！')
 
+    # ini保存
     def ckbtn_create_folder_def(self):
         config.write_config(conf_dir, 'Base', 'ckbtn_create_folder_var',
                             str(self.ckbtn_create_folder_var.get()))
@@ -107,6 +111,8 @@ class App(Frame):
                 conf_dir, 'Base', 'ckbtn_custom_name_var')))
         except Exception:
             self.ckbtn_custom_name_var.set(1)
+        # 变量
+        self.perclip_text = StringVar()
 
         '''控件'''
         self.index1 = Frame(self.root)
@@ -163,6 +169,8 @@ class App(Frame):
             .pack(side=LEFT, fill=X, expand=True)
         # 日志行
         Label(self.f_logs, text='Logs:').pack(side=LEFT)
+        Label(self.f_logs, textvariable=self.perclip_text, anchor='e')\
+            .pack(side=LEFT, fill=X, expand=True)
         # 第三行
         self.logs_box = Text(self.index3)
         self.logs_box.pack(side=LEFT, fill=BOTH, expand=True)
@@ -177,6 +185,15 @@ class App(Frame):
         self.lbl_status = Label(
             self.root, text='使用说明：复制网址然后使用爬取功能即可 By:levosaber')
         self.lbl_status.pack(side=LEFT, fill=X, expand=True)
+
+    class RepeatingTimer(Timer):
+        def run(self):
+            while not self.finished.is_set():
+                self.function(*self.args, **self.kwargs)
+                self.finished.wait(self.interval)
+
+    def set_perclip_text(self):
+        self.perclip_text.set(pyperclip.paste()[0:75])
 
     def __init__(self, version):
         self.core = Core(self.app_log)  # 可以让core库里调用本app.py的app_log()，不懂啥原理
@@ -194,10 +211,13 @@ class App(Frame):
         except Exception:
             self.save_path = ''
         self.createWidgets()
+        t = self.RepeatingTimer(1, self.set_perclip_text)
+        t.start()
 
 
 if __name__ == '__main__':
     # 显示GUI
     app = App(version=' GUI Test')
     app.mainloop()
+    app.quit()
     exit()

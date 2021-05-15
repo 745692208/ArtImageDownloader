@@ -1,5 +1,4 @@
 import os
-import time
 import re
 from concurrent import futures
 from multiprocessing import cpu_count
@@ -10,8 +9,7 @@ from pytube import YouTube  # https://pytube.io/en/latest/user/install.html
 
 class Core:
     def log(self, message):
-        time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        print('[{}]{}'.format(time_date, message))
+        print(message)
 
     def __init__(self, log_print=None):
         if log_print:  # 好像是靠这个捕获打印。然后调用app.py里的函数。
@@ -44,7 +42,7 @@ class Core:
             try:
                 j = self.session.get(url).json()
             except Exception:
-                self.log('[错误]下载失败，请检查网络设置；')
+                self.log('[错误]下载失败，请检查网络、网页问题；')
                 return
             total_count = int(j['total_count'])
             data += j['data']
