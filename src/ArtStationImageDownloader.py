@@ -4,7 +4,7 @@
 批量下载ArtStation图片
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from app import App
 
