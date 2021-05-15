@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 from concurrent import futures
 from threading import Timer
 from tkinter import StringVar, Tk, Frame, Label, Button, Scrollbar, Text, Entry
@@ -222,4 +223,4 @@ if __name__ == '__main__':
     app.mainloop()
     app.t.cancel()
     app.quit()
-    exit()
+    sys.exit()

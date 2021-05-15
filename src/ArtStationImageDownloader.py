@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import sys
+
 """
 批量下载ArtStation图片
 """
@@ -14,7 +16,7 @@ def main():
     app.mainloop()  # 进入主循环，程序运行
     app.t.cancel()
     app.quit()
-    exit()
+    sys.exit()
 
 
 if __name__ == '__main__':
