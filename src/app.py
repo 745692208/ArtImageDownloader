@@ -193,7 +193,7 @@ class App(Frame):
                 self.finished.wait(self.interval)
 
     def set_perclip_text(self):
-        self.perclip_text.set(pyperclip.paste()[0:75])
+        self.perclip_text.set('剪切板：{}'.format(pyperclip.paste()[0:75]))
 
     def __init__(self, version):
         self.core = Core(self.app_log)  # 可以让core库里调用本app.py的app_log()，不懂啥原理
