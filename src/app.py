@@ -140,13 +140,6 @@ class App(Frame):
             command=self.ckbtn_custom_name_def
         )
         self.ckbtn_custom_name.pack(side=LEFT)
-        self.ckbtn_create_folder = Checkbutton(
-            self.index2,
-            text='创建文件夹',
-            variable=self.ckbtn_create_folder_var,
-            command=self.ckbtn_create_folder_def
-        )
-        self.ckbtn_create_folder.pack(side=LEFT)
         self.ckbtn_down_video = Checkbutton(
             self.index2,
             text='下载视频',
@@ -154,6 +147,13 @@ class App(Frame):
             command=self.ckbtn_down_videor_def
         )
         self.ckbtn_down_video.pack(side=LEFT)
+        self.ckbtn_create_folder = Checkbutton(
+            self.index2,
+            text='创建文件夹',
+            variable=self.ckbtn_create_folder_var,
+            command=self.ckbtn_create_folder_def
+        )
+        self.ckbtn_create_folder.pack(side=LEFT)
 
         Button(
             self.index2, text='爬取单个作品',
@@ -193,7 +193,8 @@ class App(Frame):
                 self.finished.wait(self.interval)
 
     def set_perclip_text(self):
-        self.perclip_text.set('剪切板：{}'.format(pyperclip.paste()[0:75]))
+        text = '剪切板：{}'.format(pyperclip.paste()[0:75])
+        self.perclip_text.set(text.replace('\n', '').replace('\r', ''))
 
     def __init__(self, version):
         self.core = Core(self.app_log)  # 可以让core库里调用本app.py的app_log()，不懂啥原理
@@ -211,13 +212,14 @@ class App(Frame):
         except Exception:
             self.save_path = ''
         self.createWidgets()
-        t = self.RepeatingTimer(1, self.set_perclip_text)
-        t.start()
+        self.t = self.RepeatingTimer(1, self.set_perclip_text)
+        self.t.start()
 
 
 if __name__ == '__main__':
     # 显示GUI
     app = App(version=' GUI Test')
     app.mainloop()
+    app.t.cancel()
     app.quit()
     exit()
