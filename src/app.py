@@ -1,15 +1,17 @@
 import os
 import sys
-import re
+import time
+# import re
 from threading import Timer
 from concurrent import futures
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox, filedialog
 
-import pyperclip # pip install pyperclip
-import requests   # pip install --upgrade urllib3==1.25.2
+import pyperclip  # pip install pyperclip
+# import requests   # pip install --upgrade urllib3==1.25.2
 import config
+import core
 
 
 class App:
@@ -28,6 +30,13 @@ class App:
             os.startfile(self.entry_path.get())
         except Exception:
             messagebox.showerror("错误", "请输入正确的文件夹路径！")
+
+    def open_latest_folder(self):
+        path = self.core.save_path
+        if path != '':
+            os.startfile(path)
+        else:
+            messagebox.showinfo('无最新保存', '本次运行没有保存过作品！')
 
     def browse(self):
         print('browse')
@@ -49,6 +58,31 @@ class App:
                 messagebox.showerror("错误", "请输入正确的文件夹路径！")
                 return False
 
+    def set_param(self):
+        self.core.b_is_create_folder = self.ckbtn_create_folder_var.get()
+        self.core.b_is_down_video = self.ckbtn_down_video_var.get()
+        self.core.b_is_custom_name = self.ckbtn_custom_name_var.get()
+        self.core.entry_path = self.entry_path.get()
+        self.cf.save('Base', 'save_path', self.entry_path.get())
+
+    def get_user_works(self):
+        print('get_user_works ui', pyperclip.paste())
+        if self.check_dir():
+            self.set_param()
+            self.core.get_user_works(pyperclip.paste())
+
+    def get_work(self):
+        print('get_work ui', pyperclip.paste())
+        if self.check_dir():
+            self.set_param()
+            self.core.get_work(pyperclip.paste())
+
+    def zb_get_work(self):
+        print('zb_get_work ui', pyperclip.paste())
+        if self.check_dir():
+            self.set_param()
+            self.core.zb_get_work(pyperclip.paste())
+
     def changeTab(self, index):
         self.cf.save('base', 'tab_index', str(index))
         self.fLogs.pack_forget()
@@ -56,9 +90,6 @@ class App:
             ftab.pack_forget()
         self.ftab_list[index].pack(fill='x')
         self.fLogs.pack(side='top', fill='both', expand=1)
-
-    def ckbtn_save():
-        pass
 
     def create_widget(self):
         print('create_widget')
@@ -89,12 +120,13 @@ class App:
             fSave, text='打开最近保存文件夹',
             command=self.open_folder)\
             .pack(side='left')
-        
+
         fSave_2 = tk.Frame(self.app)
         fSave_2.pack(side='top', fill='x')
 
         self.ckbtn_custom_name_var = tk.IntVar()
-        self.ckbtn_custom_name_var.set(self.cf.load('art','ckbtn_custom_name', 1))
+        self.ckbtn_custom_name_var.set(
+            self.cf.load('art', 'ckbtn_custom_name', 1))
         self.ckbtn_custom_name = ttk.Checkbutton(
             fSave_2,
             text='自定义命名',
@@ -106,7 +138,8 @@ class App:
         )
         self.ckbtn_custom_name.pack(side='left')
         self.ckbtn_create_folder_var = tk.IntVar()
-        self.ckbtn_create_folder_var.set(self.cf.load('art','ckbtn_create_folder', 1))
+        self.ckbtn_create_folder_var.set(
+            self.cf.load('art', 'ckbtn_create_folder', 1))
         self.ckbtn_create_folder = ttk.Checkbutton(
             fSave_2,
             text='创建文件夹',
@@ -124,7 +157,8 @@ class App:
         self.ftab_list.append(self.fTool_art)
 
         self.ckbtn_down_video_var = tk.IntVar()
-        self.ckbtn_down_video_var.set(self.cf.load('art','ckbtn_down_video', 1))
+        self.ckbtn_down_video_var.set(self.cf.load(
+            'art', 'ckbtn_down_video', 1))
         self.ckbtn_down_video = ttk.Checkbutton(
             self.fTool_art,
             text='下载视频',
@@ -138,19 +172,20 @@ class App:
 
         ttk.Button(
             self.fTool_art, text='爬取单个作品',
-            command=lambda: self.executor_ui.submit(self.get_work))\
-            .pack(side='left')
+            command=lambda: self.executor_ui.submit(self.get_work)
+        ).pack(side='left')
         ttk.Button(
             self.fTool_art, text='爬取用户',
-            command=lambda: self.executor_ui.submit(self.get_user_works))\
-            .pack(side='left')
-        
+            command=lambda: self.executor_ui.submit(self.get_user_works)
+        ).pack(side='left')
         # ZBrushCentral界面
         self.fTool_zb = ttk.LabelFrame(self.app, text='ZBrushCentral')
         self.fTool_zb.pack(side='top', fill='both')
         self.ftab_list.append(self.fTool_zb)
-        ttk.Button(self.fTool_zb, text='爬取单个作品').pack(side='left')
-
+        ttk.Button(
+            self.fTool_zb, text='爬取单个作品',
+            command=lambda: self.executor_ui.submit(self.zb_get_work)
+        ).pack(side='left')
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
         self.fLogs.pack()
@@ -169,9 +204,19 @@ class App:
         self.scrollbar.pack(side='left', fill='y')
         self.scrollbar.config(command=self.logs_box.yview)
         self.logs_box.config(yscrollcommand=self.scrollbar.set)
-    
+
+    def app_log(self, value):
+        time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        value = '[{}]{}'.format(time_date, value)
+        self.logs_box.configure(state="normal")
+        self.logs_box.insert('end', value + '\n')
+        self.logs_box.see('end')
+        self.logs_box.configure(state="disabled")
+
     def __init__(self, title, ver, suffix):
         self.cf = config.Config('ArtDown', 1, './test/')
+        self.core = core.Core(self.app_log)
+        self.executor_ui = futures.ThreadPoolExecutor(1)
         self.app = tk.Tk()
         self.app.title('{} {} {}'.format(title, ver, suffix))
         # 变量
