@@ -1,4 +1,4 @@
-# 2021年5月16日
+# 2021年5月18日
 import os
 import configparser
 import ctypes
@@ -15,7 +15,8 @@ class Config:
                 print('读取成功')
             else:
                 return ''
-        except Exception:
+        except Exception as e:
+            print(e)
             print('读取失败')
             return ''
         return result
@@ -29,7 +30,8 @@ class Config:
             cf.set(field, key, value)
             cf.write(open(self.path, "w", encoding="utf-8"))
             print('写入成功')
-        except Exception:
+        except Exception as e:
+            print(e)
             print('写入失败')
             return False
         return True
@@ -42,7 +44,8 @@ class Config:
             print(buf.value)
             try:
                 os.mkdir(buf.value + r"\{}".format(name))
-            except Exception:
+            except Exception as e:
+                print(e)
                 print("")
         else:
             print("Failure!")
