@@ -33,7 +33,7 @@ class App:
         print('browse')
         dir = os.path.normpath(filedialog.askdirectory())
         if dir != '.':
-            # config.write_config(conf_dir, 'Base', 'save_path', dir)
+            self.cf.save('base', 'path', dir)
             self.save_path = dir
             self.entry_path.delete(0, 'end')
             self.entry_path.insert(0, self.save_path)
@@ -80,7 +80,7 @@ class App:
         ttk.Label(fSave, text='Save Path').pack(side='left')
         self.entry_path = ttk.Entry(fSave)
         self.entry_path.pack(side='left', fill='x', expand=True)
-        # self.entry_path.insert(0, self.save_path)
+        self.entry_path.insert(0, self.save_path)
 
         ttk.Button(fSave, text='浏览', command=self.browse).pack(side='left')
         ttk.Button(fSave, text='打开文件夹', command=self.open_folder)\
@@ -123,8 +123,6 @@ class App:
         self.fTool_art.pack(side='top', fill='x')
         self.ftab_list.append(self.fTool_art)
 
-        
-        
         self.ckbtn_down_video_var = tk.IntVar()
         self.ckbtn_down_video_var.set(self.cf.load('art','ckbtn_down_video', 1))
         self.ckbtn_down_video = ttk.Checkbutton(
@@ -138,7 +136,6 @@ class App:
         )
         self.ckbtn_down_video.pack(side='left')
 
-
         ttk.Button(
             self.fTool_art, text='爬取单个作品',
             command=lambda: self.executor_ui.submit(self.get_work))\
@@ -148,25 +145,23 @@ class App:
             command=lambda: self.executor_ui.submit(self.get_user_works))\
             .pack(side='left')
         
-
         # ZBrushCentral界面
         self.fTool_zb = ttk.LabelFrame(self.app, text='ZBrushCentral')
         self.fTool_zb.pack(side='top', fill='both')
         self.ftab_list.append(self.fTool_zb)
-        ttk.Button(self.fTool_zb, text='爬取单个作品').pack(fill='x', expand=1)
+        ttk.Button(self.fTool_zb, text='爬取单个作品').pack(side='left')
 
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
-        self.fLogs.pack(side='top', fill='x', expand=1)
+        self.fLogs.pack()
 
         self.perclip_text = tk.StringVar()
         ttk.Label(self.fLogs, anchor='w', textvariable=self.perclip_text)\
-            .pack(side='top', fill='x', expand=1)
-
+            .pack(side='top', fill='x')
         fLogs_box = ttk.Frame(self.fLogs)
-        fLogs_box.pack(side='left', fill='x', expand=1)
+        fLogs_box.pack(side='left', fill='both', expand=1)
         self.logs_box = tk.Text(fLogs_box)
-        self.logs_box.pack(side='left', fill='both', expand=1)     # left
+        self.logs_box.pack(side='left', fill='both', expand=1)
         self.logs_box.configure(state="disabled")
         self.logs_box.focus()
         # Logs界面 滚动条
@@ -175,14 +170,16 @@ class App:
         self.scrollbar.config(command=self.logs_box.yview)
         self.logs_box.config(yscrollcommand=self.scrollbar.set)
     
-    def __init__(self, title, ver, suffix) -> None:
-        self.ftab_list = []
+    def __init__(self, title, ver, suffix):
         self.cf = config.Config('ArtDown', 1, './test/')
-        # 创建GUI
         self.app = tk.Tk()
         self.app.title('{} {} {}'.format(title, ver, suffix))
+        # 变量
+        self.ftab_list = []
+        self.save_path = self.cf.load('base', 'path')
         self.tab_index = tk.IntVar()
         self.tab_index.set(self.cf.load('base', 'tab_index', 0))
+        # 运行
         self.create_widget()
         self.changeTab(self.tab_index.get())
         self.t = self.RepeatingTimer(1, self.set_perclip_text)
