@@ -7,6 +7,13 @@ import requests   # pip install --upgrade urllib3==1.25.2
 from pytube import YouTube  # https://pytube.io/en/latest/user/install.html
 
 
+b_is_create_folder = True
+b_is_custom_name = True
+entry_path = ''
+save_path = ''
+futures_list = []
+
+
 class Core:
     def log(self, message):
         print(message)
@@ -324,13 +331,17 @@ class utils:
         self.log('完成下载，地址：{}'.format(url))
 
     def make_dir(slef):
-        '''制作路径'''
+        '''新建目录文件夹'''
         print('make_dir')
 
     def make_name(slef, name1, name2, index, format):
         '''通过输入的参数，合成名字，name1-name2-index.format'''
         print('make_name')
         return '{}-{}-{}.{}'.format(name1, name2, index, format)
+
+    def make_save_path(slef):
+        '''制作保存路径'''
+        print('make_dir')
 
 
 if __name__ == '__main__':
