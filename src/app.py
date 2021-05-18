@@ -50,7 +50,7 @@ class App:
                 return False
 
     def changeTab(self, index):
-        print(index)
+        self.cf.save('base', 'tab_index', str(index))
         self.fLogs.pack_forget()
         for ftab in self.ftab_list:
             ftab.pack_forget()
@@ -65,8 +65,6 @@ class App:
         # 1 第一行 标签容器 创建标签
         fTab = tk.Frame(self.app)
         fTab.pack(side='top', fill='x')
-        self.tab_index = tk.IntVar()
-        self.tab_index.set(0)
         ttk.Radiobutton(
             fTab, text="ArtStation", value=0,
             variable=self.tab_index, command=lambda: self.changeTab(0))\
@@ -91,16 +89,14 @@ class App:
             fSave, text='打开最近保存文件夹',
             command=self.open_folder)\
             .pack(side='left')
-        # 3 第三行
-        # ArtStation页面
-        self.fTool_art = ttk.LabelFrame(self.app, text='ArtStation')
-        self.fTool_art.pack(side='top', fill='x')
-        self.ftab_list.append(self.fTool_art)
+        
+        fSave_2 = tk.Frame(self.app)
+        fSave_2.pack(side='top', fill='x')
 
         self.ckbtn_custom_name_var = tk.IntVar()
-        self.ckbtn_custom_name_var.set(self.cf.load('art','ckbtn_custom_name'))
+        self.ckbtn_custom_name_var.set(self.cf.load('art','ckbtn_custom_name', 1))
         self.ckbtn_custom_name = ttk.Checkbutton(
-            self.fTool_art,
+            fSave_2,
             text='自定义命名',
             variable=self.ckbtn_custom_name_var,
             command=lambda: self.cf.save(
@@ -109,8 +105,28 @@ class App:
             )
         )
         self.ckbtn_custom_name.pack(side='left')
+        self.ckbtn_create_folder_var = tk.IntVar()
+        self.ckbtn_create_folder_var.set(self.cf.load('art','ckbtn_create_folder', 1))
+        self.ckbtn_create_folder = ttk.Checkbutton(
+            fSave_2,
+            text='创建文件夹',
+            variable=self.ckbtn_create_folder_var,
+            command=lambda: self.cf.save(
+                'art', 'ckbtn_create_folder',
+                str(self.ckbtn_create_folder_var.get())
+            )
+        )
+        self.ckbtn_create_folder.pack(side='left')
+        # 3 第三行
+        # ArtStation页面
+        self.fTool_art = ttk.LabelFrame(self.app, text='ArtStation')
+        self.fTool_art.pack(side='top', fill='x')
+        self.ftab_list.append(self.fTool_art)
+
+        
+        
         self.ckbtn_down_video_var = tk.IntVar()
-        self.ckbtn_down_video_var.set(self.cf.load('art','ckbtn_down_video'))
+        self.ckbtn_down_video_var.set(self.cf.load('art','ckbtn_down_video', 1))
         self.ckbtn_down_video = ttk.Checkbutton(
             self.fTool_art,
             text='下载视频',
@@ -121,18 +137,7 @@ class App:
             )
         )
         self.ckbtn_down_video.pack(side='left')
-        self.ckbtn_create_folder_var = tk.IntVar()
-        self.ckbtn_create_folder_var.set(self.cf.load('art','ckbtn_create_folder'))
-        self.ckbtn_create_folder = ttk.Checkbutton(
-            self.fTool_art,
-            text='创建文件夹',
-            variable=self.ckbtn_create_folder_var,
-            command=lambda: self.cf.save(
-                'art', 'ckbtn_create_folder',
-                str(self.ckbtn_create_folder_var.get())
-            )
-        )
-        self.ckbtn_create_folder.pack(side='left')
+
 
         ttk.Button(
             self.fTool_art, text='爬取单个作品',
@@ -148,7 +153,7 @@ class App:
         self.fTool_zb = ttk.LabelFrame(self.app, text='ZBrushCentral')
         self.fTool_zb.pack(side='top', fill='both')
         self.ftab_list.append(self.fTool_zb)
-        ttk.Button(self.fTool_zb, text='text1').pack()
+        ttk.Button(self.fTool_zb, text='爬取单个作品').pack(fill='x', expand=1)
 
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
@@ -176,8 +181,10 @@ class App:
         # 创建GUI
         self.app = tk.Tk()
         self.app.title('{} {} {}'.format(title, ver, suffix))
+        self.tab_index = tk.IntVar()
+        self.tab_index.set(self.cf.load('base', 'tab_index', 0))
         self.create_widget()
-        self.changeTab(0)
+        self.changeTab(self.tab_index.get())
         self.t = self.RepeatingTimer(1, self.set_perclip_text)
         self.t.start()
 

@@ -6,7 +6,12 @@ from ctypes.wintypes import MAX_PATH
 
 
 class Config:
-    def load(self, field, key):
+    def load(self, field, key, *failValue):
+        ''':param *failValue, None, 读取失败后，返回的值。'''
+        if len(failValue) == 0:
+            failValue = ''
+        else:
+            failValue = failValue[0]
         cf = configparser.ConfigParser()
         try:
             cf.read(self.path, encoding="utf-8")
@@ -14,11 +19,12 @@ class Config:
                 result = cf.get(field, key)
                 print('读取成功')
             else:
-                return ''
+                print('读取失败，不存在field')
+                return failValue
         except Exception as e:
             print(e)
             print('读取失败')
-            return ''
+            return failValue
         return result
 
     def save(self, field, key, value):
