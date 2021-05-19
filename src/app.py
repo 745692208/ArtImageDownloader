@@ -50,8 +50,8 @@ class App:
 
     def run(self, code):
         core.entry_path = self.entry_path.get()
-        core.b_is_create_folder = self.ckbtn_create_folder_var.get()
-        core.b_is_custom_name = self.ckbtn_custom_name_var.get()
+        core.b_is_create_folder = self.is_create_folder.get()
+        core.b_is_custom_name = self.is_custom_name.get()
         self.cf.save('base', 'path', self.entry_path.get())
         url = pyperclip.paste()
         if code == 'core_zb.get_work':
@@ -60,7 +60,7 @@ class App:
         if code == 'core_art.get_work':
             self.core_art.get_work(url)
         if code == 'core_art.get_user_works':
-            self.core_art.b_is_down_video = self.ckbtn_down_video_var.get()
+            self.core_art.b_is_down_video = self.art_is_down_video.get()
             self.core_art.get_user_works(url)
 
     def changeTab(self, index):
@@ -83,6 +83,10 @@ class App:
             fTab, text="ZBrushCentral", value=1,
             variable=self.tab_index, command=lambda: self.changeTab(1))\
             .pack(side='left')
+        ttk.Radiobutton(
+            fTab, text="YouTube", value=2,
+            variable=self.tab_index, command=lambda: self.changeTab(2))\
+            .pack(side='left')
 
         # 2 第二行 save
         fSave = tk.Frame(self.app)
@@ -103,72 +107,71 @@ class App:
         fSave_2 = tk.Frame(self.app)
         fSave_2.pack(side='top', fill='x')
 
-        self.ckbtn_custom_name_var = tk.IntVar()
-        self.ckbtn_custom_name_var.set(
-            self.cf.load('art', 'ckbtn_custom_name', 1))
-        self.ckbtn_custom_name = ttk.Checkbutton(
+        self.is_custom_name = tk.IntVar()
+        self.is_custom_name.set(
+            self.cf.load('base', 'is_custom_name', 1))
+        ttk.Checkbutton(
             fSave_2,
             text='自定义命名',
-            variable=self.ckbtn_custom_name_var,
+            variable=self.is_custom_name,
             command=lambda: self.cf.save(
-                'art', 'ckbtn_custom_name',
-                str(self.ckbtn_custom_name_var.get())
+                'base', 'is_custom_name',
+                str(self.is_custom_name.get())
             )
-        )
-        self.ckbtn_custom_name.pack(side='left')
-        self.ckbtn_create_folder_var = tk.IntVar()
-        self.ckbtn_create_folder_var.set(
-            self.cf.load('art', 'ckbtn_create_folder', 1))
-        self.ckbtn_create_folder = ttk.Checkbutton(
+        ).pack(side='left')
+
+        self.is_create_folder = tk.IntVar()
+        self.is_create_folder.set(
+            self.cf.load('base', 'is_create_folder', 1))
+        ttk.Checkbutton(
             fSave_2,
             text='创建文件夹',
-            variable=self.ckbtn_create_folder_var,
+            variable=self.is_create_folder,
             command=lambda: self.cf.save(
-                'art', 'ckbtn_create_folder',
-                str(self.ckbtn_create_folder_var.get())
+                'base', 'is_create_folder',
+                str(self.is_create_folder.get())
             )
-        )
-        self.ckbtn_create_folder.pack(side='left')
+        ).pack(side='left')
         # 3 第三行
         # ArtStation页面
-        self.fTool_art = ttk.LabelFrame(self.app, text='ArtStation')
-        self.fTool_art.pack(side='top', fill='x')
-        self.ftab_list.append(self.fTool_art)
+        fTool_art = ttk.LabelFrame(self.app, text='ArtStation')
+        fTool_art.pack(side='top', fill='x')
+        self.ftab_list.append(fTool_art)
 
-        self.ckbtn_down_video_var = tk.IntVar()
-        self.ckbtn_down_video_var.set(self.cf.load(
-            'art', 'ckbtn_down_video', 1))
+        self.art_is_down_video = tk.IntVar()
+        self.art_is_down_video.set(self.cf.load(
+            'art', 'art_is_down_video', 1))
         ttk.Checkbutton(
-            self.fTool_art,
+            fTool_art,
             text='下载视频',
-            variable=self.ckbtn_down_video_var,
+            variable=self.art_is_down_video,
             command=lambda: self.cf.save(
-                'art', 'ckbtn_down_video',
-                str(self.ckbtn_down_video_var.get())
+                'art', 'art_is_down_video',
+                str(self.art_is_down_video.get())
             )
         ).pack(side='left')
 
         ttk.Button(
-            self.fTool_art, text='爬取单个作品',
+            fTool_art, text='爬取单个作品',
             command=lambda: self.executor_ui.submit(
                 self.run, 'core_art.get_work')
         ).pack(side='left')
         ttk.Button(
-            self.fTool_art, text='爬取用户',
+            fTool_art, text='爬取用户',
             command=lambda: self.executor_ui.submit(
                 self.run, 'core_art.get_user_works')
         ).pack(side='left')
 
         # ZBrushCentral界面
-        self.fTool_zb = ttk.LabelFrame(self.app, text='ZBrushCentral')
-        self.fTool_zb.pack(side='top', fill='both')
-        self.ftab_list.append(self.fTool_zb)
+        fTool_zb = ttk.LabelFrame(self.app, text='ZBrushCentral')
+        fTool_zb.pack(side='top', fill='x')
+        self.ftab_list.append(fTool_zb)
 
         self.zb_is_down_video = tk.IntVar()
         self.zb_is_down_video.set(self.cf.load(
             'zb', 'zb_is_down_video', 1))
         ttk.Checkbutton(
-            self.fTool_zb,
+            fTool_zb,
             text='下载视频',
             variable=self.zb_is_down_video,
             command=lambda: self.cf.save(
@@ -177,10 +180,23 @@ class App:
             )
         ).pack(side='left')
         ttk.Button(
-            self.fTool_zb, text='爬取单个作品',
+            fTool_zb, text='爬取单个作品',
             command=lambda: self.executor_ui.submit(
                 self.run, 'core_zb.get_work')
         ).pack(side='left')
+
+        # youtube
+        fTool_yt = ttk.LabelFrame(self.app, text='YouTube')
+        fTool_yt.pack(side='top', fill='x')
+        self.ftab_list.append(fTool_yt)
+        ttk.Button(
+            fTool_yt, text='下载',
+            command=lambda: self.executor_ui.submit(
+                self.core_u.down_youtube,
+                pyperclip.paste(), '', self.entry_path.get()
+            )
+        ).pack(side='left')
+
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
         self.fLogs.pack()
@@ -195,10 +211,10 @@ class App:
         self.logs_box.configure(state="disabled")
         self.logs_box.focus()
         # Logs界面 滚动条
-        self.scrollbar = ttk.Scrollbar(fLogs_box)
-        self.scrollbar.pack(side='left', fill='y')
-        self.scrollbar.config(command=self.logs_box.yview)
-        self.logs_box.config(yscrollcommand=self.scrollbar.set)
+        scrollbar = ttk.Scrollbar(fLogs_box)
+        scrollbar.pack(side='left', fill='y')
+        scrollbar.config(command=self.logs_box.yview)
+        self.logs_box.config(yscrollcommand=scrollbar.set)
 
     def app_log(self, value):
         time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -214,7 +230,7 @@ class App:
         core.Utils(self.app_log)
         self.core_zb = core.ZBrush()
         self.core_art = core.ArtStation()
-        self.core_utils = core.Utils()
+        self.core_u = core.Utils()
         self.executor_ui = futures.ThreadPoolExecutor(1)
         self.app = tk.Tk()
         self.app.title('{} {} {}'.format(title, ver, suffix))

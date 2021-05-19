@@ -2,8 +2,8 @@ import sys
 from app import App
 
 
-title = 'ArtStation Image Downloader'
-__version__ = "2.0.0"
+title = 'Multiple Downloaders'
+__version__ = "1.0.0"
 suffix = ''
 
 
