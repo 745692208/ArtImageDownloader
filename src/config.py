@@ -7,7 +7,7 @@ from ctypes.wintypes import MAX_PATH
 
 class Config:
     def load(self, field, key, *failValue):
-        ''':param *failValue, None, 读取失败后，返回的值。'''
+        ''':param *failValue, None, 读取失败后，返回的值。默认返回'';'''
         if len(failValue) == 0:
             failValue = ''
         else:
