@@ -55,6 +55,7 @@ class App:
         self.cf.save('base', 'path', self.entry_path.get())
         url = pyperclip.paste()
         if code == 'core_zb.get_work':
+            self.core_zb.b_is_down_video = self.zb_is_down_video.get()
             self.core_zb.get_work(url)
         if code == 'core_art.get_work':
             self.core_art.get_work(url)
@@ -71,7 +72,6 @@ class App:
         self.fLogs.pack(side='top', fill='both', expand=1)
 
     def create_widget(self):
-        print('create_widget')
         # 1 第一行 标签容器 创建标签
         fTab = tk.Frame(self.app)
         fTab.pack(side='top', fill='x')
@@ -138,7 +138,7 @@ class App:
         self.ckbtn_down_video_var = tk.IntVar()
         self.ckbtn_down_video_var.set(self.cf.load(
             'art', 'ckbtn_down_video', 1))
-        self.ckbtn_down_video = ttk.Checkbutton(
+        ttk.Checkbutton(
             self.fTool_art,
             text='下载视频',
             variable=self.ckbtn_down_video_var,
@@ -146,8 +146,7 @@ class App:
                 'art', 'ckbtn_down_video',
                 str(self.ckbtn_down_video_var.get())
             )
-        )
-        self.ckbtn_down_video.pack(side='left')
+        ).pack(side='left')
 
         ttk.Button(
             self.fTool_art, text='爬取单个作品',
@@ -159,10 +158,24 @@ class App:
             command=lambda: self.executor_ui.submit(
                 self.run, 'core_art.get_user_works')
         ).pack(side='left')
+
         # ZBrushCentral界面
         self.fTool_zb = ttk.LabelFrame(self.app, text='ZBrushCentral')
         self.fTool_zb.pack(side='top', fill='both')
         self.ftab_list.append(self.fTool_zb)
+
+        self.zb_is_down_video = tk.IntVar()
+        self.zb_is_down_video.set(self.cf.load(
+            'zb', 'zb_is_down_video', 1))
+        ttk.Checkbutton(
+            self.fTool_zb,
+            text='下载视频',
+            variable=self.zb_is_down_video,
+            command=lambda: self.cf.save(
+                'zb', 'zb_is_down_video',
+                str(self.zb_is_down_video.get())
+            )
+        ).pack(side='left')
         ttk.Button(
             self.fTool_zb, text='爬取单个作品',
             command=lambda: self.executor_ui.submit(

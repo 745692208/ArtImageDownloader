@@ -1,4 +1,4 @@
-# 2021年5月18日
+# 2021年5月20日 01:19:08
 import os
 import configparser
 import ctypes
@@ -17,7 +17,7 @@ class Config:
             cf.read(self.path, encoding="utf-8")
             if field in cf:
                 result = cf.get(field, key)
-                print('读取成功')
+                print('load-{}-{}'.format(field, key))
             else:
                 print('读取失败，不存在field')
                 return failValue
@@ -35,7 +35,7 @@ class Config:
                 cf.add_section(field)
             cf.set(field, key, value)
             cf.write(open(self.path, "w", encoding="utf-8"))
-            print('写入成功')
+            print('save-{}-{}-{}'.format(field, key, value))
         except Exception as e:
             print(e)
             print('写入失败')

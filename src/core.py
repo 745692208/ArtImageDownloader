@@ -25,11 +25,7 @@ class ArtStation:
             page += 1
             url = 'https://www.artstation.com/users/{}/projects.json?page={}'\
                 .format(username, page)
-            try:
-                j = self.session.get(url).json()
-            except Exception:
-                print('[错误]下载失败，请检查网络、网页问题；')
-                return
+            j = u.session_get(url).json()
             total_count = int(j['total_count'])
             data += j['data']
             if page > total_count / 50:
@@ -38,8 +34,7 @@ class ArtStation:
         futures_list = []
         for wrok in data:
             futures_list.append(
-                self.executor.submit(
-                    self.get_work, wrok['permalink']))
+                executor.submit(self.get_work, wrok['permalink']))
         futures.wait(futures_list)
         print("[正常]爬取用户作品的下载任务已全部完成；\n")
 
@@ -75,6 +70,7 @@ class ArtStation:
             if asset['asset_type'] == 'video' and self.b_is_down_video:
                 url = re.findall(r'src="(.*?)"', asset['player_embedded'])[0]
                 name = r'%s-%s' % (work_name, i+1)  # 这个很恶心，必须这样，否则无法创建文件，原因未知
+                # name = r'new'
                 print('这是个视频，下载比较忙，亲耐心等候。')
                 futures_list.append(
                     executor.submit(u.down_youtube, url, name, path))
@@ -103,23 +99,34 @@ class ArtStation:
 
 class ZBrush:
     def __init__(self):
-        pass
+        self.b_is_down_video = True
 
     def get_work(self, url):
-        print("ZB下载任务开始中，亲稍等{}".format(url))
-        r = session.get(url).text
+        print("ZB下载任务开始中，亲稍等，url：{}".format(url))
+        r = u.session_get(url).text
+        # 图片
         urls = re.findall(r'<img src="//(.*?).jpeg"', r)
         work_name = '{}-{}'.format(
             url.rsplit('/', 2)[1], url.rsplit('/', 2)[2])  # SwordGirl-402912
         path = u.make_save_path(work_name)
         u.check_make_dir(path)
         futures_list = []
+        print('开始咯')
         for i, down_url in enumerate(urls):
             down_url = r'https://' + down_url + '.jpeg'
             name = u.make_name(work_name, i, 'jpeg')
-            #print("name：{} -- url：{} -- path：{}".format(name, down_url, path))
             futures_list.append(
                 executor.submit(u.down_file, down_url, name, path))
+        # 视频
+        if self.b_is_down_video:
+            urls_video = re.findall(r'www(.*?)mp4', r)
+            work_name = work_name + '_video'
+            for i, video_url in enumerate(urls_video):
+                video_url = 'https://www' + video_url + 'mp4'
+                name = u.make_name(work_name, i, 'mp4')
+                print('这是个视频，下载比较忙，亲耐心等候。')
+                futures_list.append(
+                    executor.submit(u.down_file, video_url, name, path))
         futures.wait(futures_list)
         print("[正常]下载任务已完成；\n")
 
@@ -132,7 +139,9 @@ class Utils:
 
     def session_get(self, url):
         try:
-            return session.get(url)
+            s = session.get(url)
+            print('网络连接成功，正在分析数据，亲稍等。')
+            return s
         except Exception as e:
             print('[错误]网络连接失败，错误：{};'.format(e))
             return
@@ -174,7 +183,7 @@ class Utils:
         else:
             try:
                 os.makedirs(path, exist_ok=True)
-                print(path)
+                print('保存地址：{}'.format(path))
                 cf.save('base', 'save_path', path)
                 return True
             except Exception as e:
