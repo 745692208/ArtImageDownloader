@@ -225,7 +225,7 @@ class App:
         self.logs_box.configure(state="disabled")
 
     def __init__(self, title, ver, suffix):
-        self.cf = config.Config('ArtDown', 1, './test/')
+        self.cf = config.Config('MultipleDownloaders', 0, './test/')
         core.cf = self.cf
         core.Utils(self.app_log)
         self.core_zb = core.ZBrush()
