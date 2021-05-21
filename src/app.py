@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import webbrowser as web
 from threading import Timer
 from concurrent import futures
 import tkinter as tk
@@ -63,7 +64,8 @@ class App:
             self.core_art.b_is_down_video = self.art_is_down_video.get()
             self.core_art.get_user_works(url)
 
-    def changeTab(self, index):
+    def changeTab(self):
+        index = self.tab_index.get()
         self.cf.save('base', 'tab_index', str(index))
         self.fLogs.pack_forget()
         for ftab in self.ftab_list:
@@ -71,10 +73,22 @@ class App:
         self.ftab_list[index].pack(fill='x')
         self.fLogs.pack(side='top', fill='both', expand=1)
 
+    def check_menu(self):
+        web.open('https://github.com/745692208/MultipleDownloaders')
+
     def create_widget(self):
+        menubar = tk.Menu(self.app)
+        menubar.add_command(label='关于', command=self.check_menu)
+        self.app['menu'] = menubar
         # 1 第一行 标签容器 创建标签
         fTab = tk.Frame(self.app)
         fTab.pack(side='top', fill='x')
+        for i, name in enumerate(['ArtStation', 'ZBrushCentral', 'Video']):
+            ttk.Radiobutton(
+                fTab, text=name, value=i,
+                variable=self.tab_index, command=self.changeTab)\
+                .pack(side='left')
+        '''
         ttk.Radiobutton(
             fTab, text="ArtStation", value=0,
             variable=self.tab_index, command=lambda: self.changeTab(0))\
@@ -84,10 +98,10 @@ class App:
             variable=self.tab_index, command=lambda: self.changeTab(1))\
             .pack(side='left')
         ttk.Radiobutton(
-            fTab, text="YouTube", value=2,
+            fTab, text="Video", value=2,
             variable=self.tab_index, command=lambda: self.changeTab(2))\
             .pack(side='left')
-
+        '''
         # 2 第二行 save
         fSave = tk.Frame(self.app)
         fSave.pack(side='top', fill='x')
@@ -185,18 +199,24 @@ class App:
                 self.run, 'core_zb.get_work')
         ).pack(side='left')
 
-        # youtube
-        fTool_yt = ttk.LabelFrame(self.app, text='YouTube')
+        # video
+        fTool_yt = ttk.LabelFrame(self.app, text='Bilibili、YouTube')
         fTool_yt.pack(side='top', fill='x')
         self.ftab_list.append(fTool_yt)
         ttk.Button(
             fTool_yt, text='下载',
+            command=lambda: self.core_u.down_video(
+                pyperclip.paste(), self.entry_path.get())
+        ).pack(side='left')
+        '''
+        ttk.Button(
+            fTool_yt, text='下载',
             command=lambda: self.executor_ui.submit(
-                self.core_u.down_youtube,
-                pyperclip.paste(), '', self.entry_path.get()
+                self.core_u.down_video,
+                pyperclip.paste(), self.entry_path.get()
             )
         ).pack(side='left')
-
+        '''
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
         self.fLogs.pack()
@@ -241,7 +261,7 @@ class App:
         self.tab_index.set(self.cf.load('base', 'tab_index', 0))
         # 运行
         self.create_widget()
-        self.changeTab(self.tab_index.get())
+        self.changeTab()
         self.t = self.RepeatingTimer(1, self.set_perclip_text)
         self.t.start()
 

@@ -1,9 +1,11 @@
 import os
 import re
+import sys
 from concurrent import futures
 from multiprocessing import cpu_count
 from tkinter import messagebox
 
+import you_get
 import requests   # pip install --upgrade urllib3==1.25.2
 from pytube import YouTube  # https://pytube.io/en/latest/user/install.html
 import config
@@ -168,6 +170,16 @@ class Utils:
             print('下载很慢，请稍等！')
             YouTube(url).streams.first().download(save_path)
         print('完成下载，地址：{}'.format(url))
+
+    def down_video(self, url, path):
+        print('下载较慢请稍等。')
+        try:
+            sys.argv = ['you-get', '-o', path, url]
+            you_get.main()
+            os.startfile(path)
+            print('下载完成！')
+        except Exception as e:
+            print('下载错误，请自我检查，错误：{}'.format(e))
 
     def make_name(slef, name, index, format):
         '''通过输入的参数，合成名字，name1-name2-index.format
