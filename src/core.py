@@ -164,12 +164,15 @@ class Utils:
         :param url, str, 输入网页地址，如https://www.youtube.com/watch?v=3uVvUD-5Vl4 ;
         '''
         save_path = save_path + "/"
-        if file_name != '':
-            YouTube(url).streams.first().download(save_path, file_name)
-        else:
-            print('下载很慢，请稍等！')
-            YouTube(url).streams.first().download(save_path)
-        print('完成下载，地址：{}'.format(url))
+        try:
+            if file_name != '':
+                YouTube(url).streams.first().download(save_path, file_name)
+            else:
+                print('下载很慢，请稍等！')
+                YouTube(url).streams.first().download(save_path)
+            print('完成下载，地址：{}'.format(url))
+        except Exception as e:
+            print(e)
 
     def down_video(self, url, path):
         print('下载较慢请稍等。')

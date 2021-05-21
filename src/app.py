@@ -196,10 +196,8 @@ class App:
         ).pack(side='left')
         ttk.Button(
             fTool_yt, text='下载YouTube',
-            command=lambda: self.executor_ui.submit(
-                self.core_u.down_youtube,
-                pyperclip.paste(), '', self.entry_path.get()
-            )
+            command=lambda: self.core_u.down_youtube(
+                pyperclip.paste(), '', self.entry_path.get())
         ).pack(side='left')
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
