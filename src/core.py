@@ -5,7 +5,7 @@ from concurrent import futures
 from multiprocessing import cpu_count
 from tkinter import messagebox
 
-import you_get
+import you_get  # pip install you_get
 import requests   # pip install --upgrade urllib3==1.25.2
 from pytube import YouTube  # https://pytube.io/en/latest/user/install.html
 import config

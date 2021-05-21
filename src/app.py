@@ -88,20 +88,6 @@ class App:
                 fTab, text=name, value=i,
                 variable=self.tab_index, command=self.changeTab)\
                 .pack(side='left')
-        '''
-        ttk.Radiobutton(
-            fTab, text="ArtStation", value=0,
-            variable=self.tab_index, command=lambda: self.changeTab(0))\
-            .pack(side='left')
-        ttk.Radiobutton(
-            fTab, text="ZBrushCentral", value=1,
-            variable=self.tab_index, command=lambda: self.changeTab(1))\
-            .pack(side='left')
-        ttk.Radiobutton(
-            fTab, text="Video", value=2,
-            variable=self.tab_index, command=lambda: self.changeTab(2))\
-            .pack(side='left')
-        '''
         # 2 第二行 save
         fSave = tk.Frame(self.app)
         fSave.pack(side='top', fill='x')
@@ -204,19 +190,17 @@ class App:
         fTool_yt.pack(side='top', fill='x')
         self.ftab_list.append(fTool_yt)
         ttk.Button(
-            fTool_yt, text='下载',
+            fTool_yt, text='下载Bilibili',
             command=lambda: self.core_u.down_video(
                 pyperclip.paste(), self.entry_path.get())
         ).pack(side='left')
-        '''
         ttk.Button(
-            fTool_yt, text='下载',
+            fTool_yt, text='下载YouTube',
             command=lambda: self.executor_ui.submit(
-                self.core_u.down_video,
-                pyperclip.paste(), self.entry_path.get()
+                self.core_u.down_youtube,
+                pyperclip.paste(), '', self.entry_path.get()
             )
         ).pack(side='left')
-        '''
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
         self.fLogs.pack()
