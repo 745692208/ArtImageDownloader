@@ -73,7 +73,7 @@ class ArtStation:
                 url = re.findall(r'src="(.*?)"', asset['player_embedded'])[0]
                 name = r'%s-%s' % (work_name, i+1)  # 这个很恶心，必须这样，否则无法创建文件，原因未知
                 # name = r'new'
-                print('这是个视频，下载比较忙，亲耐心等候。')
+                print('这是个视频，下载比较忙，亲耐心等候 youtube。')
                 futures_list.append(
                     executor.submit(u.down_youtube, url, name, path))
             if asset['asset_type'] == 'video_clip' and self.b_is_down_video:

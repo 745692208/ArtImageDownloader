@@ -3,7 +3,7 @@ from app import App
 
 
 title = 'Multiple Downloaders'
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 suffix = ''
 
 

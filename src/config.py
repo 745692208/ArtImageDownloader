@@ -1,4 +1,4 @@
-# 2021年5月20日 01:19:08
+# 2021年5月25日 23:19:42
 import os
 import configparser
 import ctypes
@@ -7,7 +7,8 @@ from ctypes.wintypes import MAX_PATH
 
 class Config:
     def load(self, field, key, *failValue):
-        ''':param *failValue, None, 读取失败后，返回的值。默认返回'';'''
+        '''读取
+        :param *failValue, None, 读取失败后，返回的值。默认返回'';'''
         if len(failValue) == 0:
             failValue = ''
         else:
@@ -17,7 +18,7 @@ class Config:
             cf.read(self.path, encoding="utf-8")
             if field in cf:
                 result = cf.get(field, key)
-                print('load-{}-{}'.format(field, key))
+                print('load: [{}]{} = {}'.format(field, key, result))
             else:
                 print('读取失败，不存在field')
                 return failValue
@@ -28,6 +29,7 @@ class Config:
         return result
 
     def save(self, field, key, value):
+        '''保存'''
         cf = configparser.ConfigParser()
         try:
             cf.read(self.path, encoding="utf-8")
@@ -35,7 +37,7 @@ class Config:
                 cf.add_section(field)
             cf.set(field, key, value)
             cf.write(open(self.path, "w", encoding="utf-8"))
-            print('save-{}-{}-{}'.format(field, key, value))
+            print('save: [{}]{} = {}'.format(field, key, value))
         except Exception as e:
             print(e)
             print('写入失败')
@@ -43,7 +45,7 @@ class Config:
         return True
 
     def make_conf_dir(self, name):
-        # 获取我的文档路径，并创建目录
+        '''获取我的文档路径，并创建目录'''
         dll = ctypes.windll.shell32
         buf = ctypes.create_unicode_buffer(MAX_PATH + 1)
         if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
@@ -60,19 +62,23 @@ class Config:
         return flie_path
 
     def get_cf(self):
+        '''获取cf类并读取ini文件，可通过这个操作更底层的方法'''
         cf = configparser.ConfigParser()
         cf.read(self.path, encoding="utf-8")
         return cf
 
     def sections(self):
+        '''获取ini中的所有大类[xxx]'''
         cf = self.get_cf()
         return cf.sections()
 
     def options(self, sections):
+        '''获取ini指定大类[]中的所有选项'''
         cf = self.get_cf()
         return cf.options(sections)
 
     def get_all(self):
+        '''获取ini中所有的大类、选项、值，输出如：{'base':{'x1':'x', 'x2':'x'}}'''
         cf = self.get_cf()
         cf_data = {}
         for section in cf.sections():
@@ -81,8 +87,8 @@ class Config:
                 cf_data[section][option] = self.load(section, option)
         return cf_data
 
-    def __init__(self, name, bIsCustomPath, *custom_path) -> None:
-        '''Config
+    def __init__(self, name, bIsCustomPath, *custom_path):
+        '''Config使用整合，通过设置ini文件路径，使用save、load方法，即可便捷使用。
         :param name, str, 默认文件夹和ini的名字。
         :param bIsCustomPath, bool, 是否使用特定的ini保存路径，不使用的话会保持在我的文档里。
         :param *custom_path, str, 使用上面的参数后，这里需要输入自定义保存的路径。'''
