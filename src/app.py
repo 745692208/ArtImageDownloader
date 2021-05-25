@@ -68,9 +68,9 @@ class App:
         if code == 'auto':
             print('auto')
             if 'youtube' in url:
-                self.core_u.down_youtube(pyperclip.paste(), '', self.entry_path.get())
+                self.core_u.down_youtube(url, '', self.entry_path.get())
             elif 'bilibili' in url:
-                pass
+                self.core_u.down_video(url, self.entry_path.get())
             elif 'zbrushcentral' in url:
                 self.core_zb.b_is_down_video = self.zb_is_down_video.get()
                 self.core_zb.get_work(url)

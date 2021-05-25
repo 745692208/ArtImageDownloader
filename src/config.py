@@ -49,7 +49,8 @@ class Config:
         if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
             print(buf.value)
             try:
-                os.mkdir(buf.value + r"\{}".format(name))
+                # os.mkdir(buf.value + r"\{}".format(name))
+                os.makedirs(buf.value + r"\{}".format(name), exist_ok=True)
             except Exception as e:
                 print(e)
                 print("")
