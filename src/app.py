@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import time
 import webbrowser as web
@@ -7,7 +6,7 @@ from threading import Timer
 from concurrent import futures
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import Menu, messagebox, filedialog
+from tkinter import messagebox, filedialog
 
 import pyperclip  # pip install pyperclip
 import config
@@ -57,13 +56,13 @@ class App:
         self.cf.save('base', 'path', self.entry_path.get())
         url = pyperclip.paste()
         if code == 'core_zb.get_work':
-            self.core_zb.b_is_down_video = self.zb_is_down_video.get()
+            self.core_zb.b_is_down_video = self.is_down_video.get()
             self.core_zb.get_work(url)
         if code == 'core_art.get_work':
-            self.core_art.b_is_down_video = self.art_is_down_video.get()
+            self.core_art.b_is_down_video = self.is_down_video.get()
             self.core_art.get_work(url)
         if code == 'core_art.get_user_works':
-            self.core_art.b_is_down_video = self.art_is_down_video.get()
+            self.core_art.b_is_down_video = self.is_down_video.get()
             self.core_art.get_user_works(url)
         
         if code == 'auto':
@@ -81,7 +80,7 @@ class App:
                     self.core_art.get_work(url)
                 else:
                     self.core_art.get_user_works(url)
-
+    '''
     def changeTab(self):
         index = self.tab_index.get()
         self.cf.save('base', 'tab_index', str(index))
@@ -90,7 +89,7 @@ class App:
             ftab.pack_forget()
         self.ftab_list[index].pack(fill='x')
         self.fLogs.pack(side='top', fill='both', expand=1)
-
+    '''
     def create_widget(self):
         menubar = tk.Menu(self.app)
         assetWeb = tk.Menu(menubar)
@@ -100,15 +99,18 @@ class App:
         assetWeb.add_command(label='BiliBili', command=lambda: web.open('https://www.bilibili.com/'))
         menubar.add_command(label='关于', command=lambda: web.open('https://github.com/745692208/MultipleDownloaders'))
         menubar.add_cascade(label='资源网站', menu=assetWeb)
+        menubar.add_command(label='使用帮助', command=lambda: messagebox.showinfo('使用帮助', '自行尝试，爱用不用，不用拉到！'))
         self.app['menu'] = menubar
         # 1 第一行 标签容器 创建标签
         fTab = tk.Frame(self.app)
         fTab.pack(side='top', fill='x')
+        '''
         for i, name in enumerate(['ArtStation', 'ZBrushCentral', 'Video']):
             ttk.Radiobutton(
                 fTab, text=name, value=i,
                 variable=self.tab_index, command=self.changeTab)\
                 .pack(side='left')
+        '''
         # 2 第二行 save
         fSave = tk.Frame(self.app)
         fSave.pack(side='top', fill='x')
@@ -153,12 +155,25 @@ class App:
                 str(self.is_create_folder.get())
             )
         ).pack(side='left')
+        self.is_down_video = tk.IntVar()
+        self.is_down_video.set(self.cf.load(
+            'base', 'is_down_video', 1))
+        ttk.Checkbutton(
+            fSave_2,
+            text='下载视频',
+            variable=self.is_down_video,
+            command=lambda: self.cf.save(
+                'base', 'is_down_video',
+                str(self.is_down_video.get())
+            )
+        ).pack(side='left')
         ttk.Button(
             fSave_2,
             text='自动分析链接并爬取',
             command=lambda: self.executor_ui.submit(
                 self.run, 'auto')
         ).pack(side='left', fill='x', expand=1)
+        '''
         # 3 第三行
         # ArtStation页面
         fTool_art = ttk.LabelFrame(self.app, text='ArtStation')
@@ -226,9 +241,10 @@ class App:
             command=lambda: self.core_u.down_youtube(
                 pyperclip.paste(), '', self.entry_path.get())
         ).pack(side='left')
+        '''
         # 4 第四行 Logs界面
         self.fLogs = ttk.LabelFrame(self.app, text='Logs')
-        self.fLogs.pack()
+        self.fLogs.pack(side='top', fill='both', expand=1)
 
         self.perclip_text = tk.StringVar()
         ttk.Label(self.fLogs, anchor='w', textvariable=self.perclip_text)\
@@ -270,7 +286,7 @@ class App:
         self.tab_index.set(self.cf.load('base', 'tab_index', 0))
         # 运行
         self.create_widget()
-        self.changeTab()
+        # self.changeTab()
         self.t = self.RepeatingTimer(1, self.set_perclip_text)
         self.t.start()
 
