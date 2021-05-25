@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import webbrowser as web
@@ -6,7 +7,7 @@ from threading import Timer
 from concurrent import futures
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import messagebox, filedialog
+from tkinter import Menu, messagebox, filedialog
 
 import pyperclip  # pip install pyperclip
 import config
@@ -59,10 +60,27 @@ class App:
             self.core_zb.b_is_down_video = self.zb_is_down_video.get()
             self.core_zb.get_work(url)
         if code == 'core_art.get_work':
+            self.core_art.b_is_down_video = self.art_is_down_video.get()
             self.core_art.get_work(url)
         if code == 'core_art.get_user_works':
             self.core_art.b_is_down_video = self.art_is_down_video.get()
             self.core_art.get_user_works(url)
+        
+        if code == 'auto':
+            print('auto')
+            if 'youtube' in url:
+                self.core_u.down_youtube(pyperclip.paste(), '', self.entry_path.get())
+            elif 'bilibili' in url:
+                pass
+            elif 'zbrushcentral' in url:
+                self.core_zb.b_is_down_video = self.zb_is_down_video.get()
+                self.core_zb.get_work(url)
+            elif 'artstation' in url:
+                self.core_art.b_is_down_video = self.art_is_down_video.get()
+                if 'artwork' in url:  # 判断是否为单个作品，否则为用户
+                    self.core_art.get_work(url)
+                else:
+                    self.core_art.get_user_works(url)
 
     def changeTab(self):
         index = self.tab_index.get()
@@ -73,12 +91,15 @@ class App:
         self.ftab_list[index].pack(fill='x')
         self.fLogs.pack(side='top', fill='both', expand=1)
 
-    def check_menu(self):
-        web.open('https://github.com/745692208/MultipleDownloaders')
-
     def create_widget(self):
         menubar = tk.Menu(self.app)
-        menubar.add_command(label='关于', command=self.check_menu)
+        assetWeb = tk.Menu(menubar)
+        assetWeb.add_command(label='ArtStion', command=lambda: web.open('https://www.artstation.com/'))
+        assetWeb.add_command(label='ZBrushcentral', command=lambda: web.open('https://www.zbrushcentral.com/'))
+        assetWeb.add_command(label='YouTube', command=lambda: web.open('https://www.youtube.com/'))
+        assetWeb.add_command(label='BiliBili', command=lambda: web.open('https://www.bilibili.com/'))
+        menubar.add_command(label='关于', command=lambda: web.open('https://github.com/745692208/MultipleDownloaders'))
+        menubar.add_cascade(label='资源网站', menu=assetWeb)
         self.app['menu'] = menubar
         # 1 第一行 标签容器 创建标签
         fTab = tk.Frame(self.app)
@@ -132,6 +153,12 @@ class App:
                 str(self.is_create_folder.get())
             )
         ).pack(side='left')
+        ttk.Button(
+            fSave_2,
+            text='自动分析链接并爬取',
+            command=lambda: self.executor_ui.submit(
+                self.run, 'auto')
+        ).pack(side='left', fill='x', expand=1)
         # 3 第三行
         # ArtStation页面
         fTool_art = ttk.LabelFrame(self.app, text='ArtStation')
