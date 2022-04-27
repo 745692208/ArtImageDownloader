@@ -67,7 +67,7 @@ class Config:
         '''Config使用整合，通过设置ini文件路径，使用save、load方法，即可便捷使用。
         :param name, str, 默认文件夹和ini的名字。'''
         self.cf = configparser.ConfigParser()
-        self.path = os.path.dirname(os.path.realpath(__file__))
+        self.path = os.path.dirname(os.path.realpath(sys.argv[0]))
         self.path = self.path + '/' + name + '.ini'
         print(self.path)
 
@@ -275,10 +275,11 @@ class App:
         self.perclipText.set(text.replace('\n', '').replace('\r', ''))
 
     def on_OpenConfig(self):
-        path = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.dirname(os.path.realpath(sys.argv[0]))
         path = path + '/' + ui_name + '.ini'
         try:
             os.startfile(path)
+            self.app_log(path)
         except Exception:
             self.app_log('没有ini文件，请先保存ini。')
 
@@ -287,6 +288,7 @@ class App:
         self.cf.save('a', 'isCustomName', str(self.isCustomName.get()))
         self.cf.save('a', 'isCreateFolder', str(self.isCreateFolder.get()))
         self.cf.save('a', 'isDownloadVideo', str(self.isDownloadVideo.get()))
+        self.cf.save('a', 'customSaveName', str(self.customSaveName.get()))
         self.cf.save('ui', 'saveName', ','.join(self.saveName))
         self.cf.save('ui', 'rowNum', str(self.rowNum))
         self.cf.save('ui', 'h', str(self.h))
@@ -302,8 +304,9 @@ class App:
         self.savePath.set(self.cf.load('a', 'savePath', 'D:/Test'))
         self.isCustomName.set(int(self.cf.load('a', 'isCustomName', '1')))
         self.isCreateFolder.set(int(self.cf.load('a', 'isCreateFolder', '0')))
-        self.isDownloadVideo.set(int(self.cf.load('a', 'isDownloadVideo',
-                                                  '1')))
+        self.isDownloadVideo.set(
+            int(self.cf.load('a', 'isDownloadVideo', '1')))
+        self.customSaveName.set(self.cf.load('a', 'customSaveName', 'x'))
         self.c.lastSavePath = self.cf.load('a', 'lastSavePath', 'D:/Test')
 
     def on_OpenLastFolder(self):
@@ -360,6 +363,7 @@ class App:
         ui_main.title('{} {} '.format(ui_name, ui_version))
         # build variable
         self.savePath = tk.StringVar(value='D:/Test')
+        self.customSaveName = tk.StringVar(value='堡垒之夜')
         self.isCustomName = tk.IntVar(value=1)
         self.isDownloadVideo = tk.IntVar(value=1)
         self.isCreateFolder = tk.IntVar(value=1)
@@ -410,6 +414,17 @@ class App:
         a.pack(side="left")
         # btn 打开最近保存文件夹-----
         a = ttk.Button(ui_f2, text="打开最近保存文件夹", command=self.on_OpenLastFolder)
+        a.pack(expand="true", fill="x", side="left")
+        # 03 item -----------------------------------
+        f = ttk.LabelFrame(ui_main, text='自定义保存路径')
+        f.pack(fill="x", side="top")
+        a = ttk.Entry(f, textvariable=self.customSaveName)
+        a.pack(side="left")
+        a = ttk.Button(f, text='打开文件夹', command=lambda: self.on_OpenFolder(
+            self.customSaveName.get()))
+        a.pack(side="left")
+        a = ttk.Button(f, text='下载到此处', command=lambda: self.on_Download(
+            self.customSaveName.get()))
         a.pack(expand="true", fill="x", side="left")
         # 03 item -----------------------------------
         f = ttk.LabelFrame(ui_main, text='点击按钮下载到指定文件夹')
