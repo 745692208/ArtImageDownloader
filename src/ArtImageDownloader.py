@@ -19,10 +19,11 @@ import requests  # pip install --upgrade urllib3==1.25.2
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
 ui_version = '1.0.220427 by levosaber'
-saveName = ['2D', '2D角色', '2D生物', '2D场景', '2D卡通',
-            '3D', '3D写实', '3D卡通', '3D手绘', '3D素体',
-            '3D角色-现代', '3D角色-古代', '3D角色-未来', '3D生物', 'x',
-            '3D场景', '3D道具', '3D载具', '其它',  'x']
+saveName = [
+    '2D', '2D角色', '2D生物', '2D场景', '2D卡通', '3D', '3D写实', '3D卡通', '3D手绘', '3D素体',
+    '3D角色-现代', '3D角色-古代', '3D角色-未来', '3D生物', 'x', '3D场景', '3D道具', '3D载具', '其它',
+    'x'
+]
 rowNum = 5
 h = 15
 w = 100
@@ -220,22 +221,22 @@ class Core:
 
     # zb ------------------
     def zb_get_work(self, url):
-        self.print_log("ZB下载任务开始中，亲稍等，url：{}".format(url))
+        self.print_log('分析网址：{}，请稍等...'.format(url))
         r = self.session_get(url).text
         # 图片
-        urls = re.findall(r'<img src="//(.*?).jpeg"', r)
+        urls = re.findall(r'jpeg 1.5x, //(.*?) 2x', r)
         work_name = '{}-{}'.format(
             url.rsplit('/', 2)[1],
             url.rsplit('/', 2)[2])  # SwordGirl-402912
         path = self.make_save_path(work_name)
         self.check_make_dir(path)
         futures_list = []
-        self.print_log('开始咯')
-        for i, down_url in enumerate(urls):
-            down_url = r'https://' + down_url + '.jpeg'
+        for i, url in enumerate(urls):
+            url = 'https://' + url
             name = self.make_name(work_name, i, 'jpeg')
+            self.print_log('图片：{}'.format(url))
             futures_list.append(
-                self.executor.submit(self.down_file, down_url, name, path))
+                self.executor.submit(self.down_file, url, name, path))
         # 视频
         if self.isDownloadVideo:
             urls_video = re.findall(r'www(.*?)mp4', r)
@@ -243,12 +244,12 @@ class Core:
             for i, video_url in enumerate(urls_video):
                 video_url = 'https://www' + video_url + 'mp4'
                 name = self.make_name(work_name, i, 'mp4')
-                self.print_log('这是个视频，下载比较忙，亲耐心等候。')
+                self.print_log('视频：{}'.format(video_url))
                 futures_list.append(
                     self.executor.submit(self.down_file, video_url, name,
                                          path))
         futures.wait(futures_list)
-        self.print_log("[正常]下载任务已完成；\n")
+        self.print_log("下载任务已完成；\n")
 
 
 # =============================== App ===============================
@@ -304,8 +305,8 @@ class App:
         self.savePath.set(self.cf.load('a', 'savePath', 'D:/Test'))
         self.isCustomName.set(int(self.cf.load('a', 'isCustomName', '1')))
         self.isCreateFolder.set(int(self.cf.load('a', 'isCreateFolder', '0')))
-        self.isDownloadVideo.set(
-            int(self.cf.load('a', 'isDownloadVideo', '1')))
+        self.isDownloadVideo.set(int(self.cf.load('a', 'isDownloadVideo',
+                                                  '1')))
         self.customSaveName.set(self.cf.load('a', 'customSaveName', 'x'))
         self.c.lastSavePath = self.cf.load('a', 'lastSavePath', 'D:/Test')
 
@@ -341,7 +342,7 @@ class App:
         self.c.isDownloadVideo = self.isDownloadVideo.get()
         self.c.savePath = os.path.join(self.savePath.get(), name)
         if 'zbrushcentral' in url:
-            self.c.get_work(url)
+            self.c.zb_get_work(url)
         elif 'artstation' in url:
             if 'artwork' in url:  # 判断是否为单个作品，否则为用户
                 self.c.get_work(url)
@@ -385,7 +386,9 @@ class App:
         a = 'https://www.artstation.com/'
         about.add_command(label='ArtStion', command=lambda: web.open(a))
         a = 'https://www.zbrushcentral.com/'
-        about.add_command(label='ZBrushcentral', command=lambda: web.open(a))
+        about.add_command(
+            label='ZBrushcentral',
+            command=lambda: web.open('https://www.zbrushcentral.com/'))
         menubar.add_cascade(label='About', menu=about)
         ui_main['menu'] = menubar
         # 01 options -----------------------------------
@@ -420,11 +423,15 @@ class App:
         f.pack(fill="x", side="top")
         a = ttk.Entry(f, textvariable=self.customSaveName)
         a.pack(side="left")
-        a = ttk.Button(f, text='打开文件夹', command=lambda: self.on_OpenFolder(
-            self.customSaveName.get()))
+        a = ttk.Button(
+            f,
+            text='打开文件夹',
+            command=lambda: self.on_OpenFolder(self.customSaveName.get()))
         a.pack(side="left")
-        a = ttk.Button(f, text='下载到此处', command=lambda: self.on_Download(
-            self.customSaveName.get()))
+        a = ttk.Button(
+            f,
+            text='下载到此处',
+            command=lambda: self.on_Download(self.customSaveName.get()))
         a.pack(expand="true", fill="x", side="left")
         # 03 item -----------------------------------
         f = ttk.LabelFrame(ui_main, text='点击按钮下载到指定文件夹')
