@@ -375,7 +375,7 @@ class App:
         menubar.add_cascade(label='Options', menu=options)
         # about
         about = tk.Menu(menubar, tearoff=0)
-        a = 'https://github.com/745692208/MultipleDownloaders'
+        a = 'https://github.com/745692208/ArtImageDownloader'
         about.add_command(label='Github', command=lambda: web.open(a))
         about.add_separator()
         a = 'https://www.artstation.com/'
