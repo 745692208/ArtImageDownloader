@@ -208,7 +208,7 @@ class Core:
                     self.executor.submit(self.down_file, source_media, name,
                                          path))
         futures.wait(futures_list)
-        self.print_log("下载任务已完成；\n")
+        self.print_log("下载任务已完成：{}\n".format(work_id))
 
     def custom_name(self, j, file_name):
         if self.isCustomName:
@@ -249,7 +249,7 @@ class Core:
                     self.executor.submit(self.down_file, video_url, name,
                                          path))
         futures.wait(futures_list)
-        self.print_log("下载任务已完成；\n")
+        self.print_log("下载任务已完成：{}\n".format(work_name))
 
 
 # =============================== App ===============================
@@ -274,6 +274,8 @@ class App:
     def set_perclipText(self):
         text = '剪切板：{}'.format(pyperclip.paste()[0:75])
         self.perclipText.set(text.replace('\n', '').replace('\r', ''))
+        text = '打开最近保存：' + self.c.lastSavePath
+        self.lastSaveText.set(text)
 
     def on_OpenConfig(self):
         path = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -364,12 +366,13 @@ class App:
         ui_main.title('{} {} '.format(ui_name, ui_version))
         # build variable
         self.savePath = tk.StringVar(value='D:/Test')
-        self.customSaveName = tk.StringVar(value='堡垒之夜')
+        self.customSaveName = tk.StringVar(value='')
         self.isCustomName = tk.IntVar(value=1)
         self.isDownloadVideo = tk.IntVar(value=1)
         self.isCreateFolder = tk.IntVar(value=1)
         self.lastSavePath = ''
         self.perclipText = tk.StringVar(value='')
+        self.lastSaveText = tk.StringVar(value='打开最近保存文件夹')
         self.saveName = saveName
         self.loadConfig()
         # 00 menu -----------------------------------
@@ -416,10 +419,11 @@ class App:
         a = ttk.Checkbutton(ui_f2, text="下载视频", variable=self.isDownloadVideo)
         a.pack(side="left")
         # btn 打开最近保存文件夹-----
-        a = ttk.Button(ui_f2, text="打开最近保存文件夹", command=self.on_OpenLastFolder)
+        a = ttk.Button(ui_f2, textvariable=self.lastSaveText)
+        a.configure(command=self.on_OpenLastFolder)
         a.pack(expand="true", fill="x", side="left")
         # 03 item -----------------------------------
-        f = ttk.LabelFrame(ui_main, text='自定义保存路径')
+        f = ttk.LabelFrame(ui_main, text='自定义保存名字')
         f.pack(fill="x", side="top")
         a = ttk.Entry(f, textvariable=self.customSaveName)
         a.pack(side="left")
@@ -443,11 +447,13 @@ class App:
         ui_logs.pack(expand="true", fill="both", side="top")
         a = ttk.Label(ui_logs, justify="left", textvariable=self.perclipText)
         a.pack(expand="false", fill="x", side="top")
-        self.ui_logs_text = tk.Text(ui_logs, state="disabled")
-        self.ui_logs_text.configure(height=self.h,
-                                    state="disabled",
-                                    width=self.w)
+        sb = ttk.Scrollbar(ui_logs)
+        sb.pack(side='right', fill='y')
+        self.ui_logs_text = tk.Text(ui_logs, yscrollcommand=sb.set)
+        self.ui_logs_text.configure(height=self.h, width=self.w,
+                                    state="disabled")
         self.ui_logs_text.pack(expand="true", fill="both", side="left")
+        sb.config(command=self.ui_logs_text.yview)
         # Main widget
         self.mainwindow = ui_main
 
