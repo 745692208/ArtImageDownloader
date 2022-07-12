@@ -18,7 +18,7 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.0.220427 by levosaber'
+ui_version = '1.1.220713 by levosaber'
 saveName = [
     '2D', '2D角色', '2D生物', '2D场景', '2D卡通', '3D', '3D写实', '3D卡通', '3D手绘', '3D素体',
     '3D角色-现代', '3D角色-古代', '3D角色-未来', '3D生物', 'x', '3D场景', '3D道具', '3D载具', '其它',
@@ -27,6 +27,21 @@ saveName = [
 rowNum = 5
 h = 15
 w = 100
+item = {'path': '3D', 'sub': []}
+itemAll = [
+    {'path': '3D', 'sub': [
+        {'path': '3D/写实', 'sub': [
+            {'path': '3D/写实/角色', 'sub': []},
+            {'path': '3D/写实/生物', 'sub': []},
+            {'path': '3D/写实/场景', 'sub': []}
+            ]},
+        {'path': '3D/风格化', 'sub': []},
+        {'path': '3D/手绘', 'sub': []},
+        ]},
+    {'path': '2D', 'sub': []},
+    {'path': '图文教程', 'sub': []}
+]
+itemPadx = 20
 
 # =============================== Config ===============================
 
@@ -353,12 +368,35 @@ class App:
         else:
             self.app_log('剪切板中信息有误，无法爬取数据。')
 
+    def click_event(self, evt):
+        # 鼠标事件
+        if evt.type == '4':
+            # 鼠标左击
+            if evt.num == 1:
+                self.on_Download('name')
+            # 鼠标右击
+            elif evt.num == 3:
+                print('right')
+
     def createItem(self, f, name, i):
         r = int(i / self.rowNum)
         c = i - r * self.rowNum
         a = ttk.Button(f, text=name)
-        a.configure(command=lambda: self.on_Download(name))
+        a.bind_all("<Button-1>", self.click_event)
+        a.bind_all("<Button-3>", self.click_event)
+        # a.configure(command=lambda: self.on_Download(name))
         a.grid(column=c, row=r, padx=1, pady=1)
+    
+    def get_item(self, item, index, p):
+        # Action
+        print(index, item['path'])
+        b = ttk.Button(p)
+        b.configure(style="Toolbutton", text=item['path'])
+        b.configure(command=lambda: self.on_Download(item['path']))
+        b.pack(fill="x", padx=(index*itemPadx, 0))
+        # New loop
+        for sub in item['sub']:
+            self.get_item(sub, index+1, p)
 
     def createUI(self, master=None):
         # build ui
@@ -440,8 +478,12 @@ class App:
         # 03 item -----------------------------------
         f = ttk.LabelFrame(ui_main, text='点击按钮下载到指定文件夹')
         f.pack(fill="x", side="top")
+        '''
         for i, name in enumerate(self.saveName):
             self.createItem(f, name, i)
+        '''
+        for item in itemAll:
+            self.get_item(item, 0, f)
         # 04 logs -----------------------------------
         ui_logs = ttk.Frame(ui_main)
         ui_logs.pack(expand="true", fill="both", side="top")
@@ -450,7 +492,8 @@ class App:
         sb = ttk.Scrollbar(ui_logs)
         sb.pack(side='right', fill='y')
         self.ui_logs_text = tk.Text(ui_logs, yscrollcommand=sb.set)
-        self.ui_logs_text.configure(height=self.h, width=self.w,
+        self.ui_logs_text.configure(height=self.h,
+                                    width=self.w,
                                     state="disabled")
         self.ui_logs_text.pack(expand="true", fill="both", side="left")
         sb.config(command=self.ui_logs_text.yview)
