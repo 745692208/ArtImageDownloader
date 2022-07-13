@@ -18,15 +18,46 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.0.220427 by levosaber'
-saveName = [
-    '2D', '2D角色', '2D生物', '2D场景', '2D卡通', '3D', '3D写实', '3D卡通', '3D手绘', '3D素体',
-    '3D角色-现代', '3D角色-古代', '3D角色-未来', '3D生物', 'x', '3D场景', '3D道具', '3D载具', '其它',
-    'x'
+ui_version = '1.1.220713 by levosaber'
+saveSort0 = [
+    '0;3D',
+    '1;3D/写实',
+    '2;3D/写实/角色',
+    '3;3D/写实/角色/奇幻',
+    '3;3D/写实/角色/近代',
+    '3;3D/写实/角色/科幻',
+    '2;3D/写实/生物',
+    '3;3D/写实/生物/类人型',
+    '3;3D/写实/生物/机械类',
+    '3;3D/写实/生物/爬行类',
+    '3;3D/写实/生物/水栖类',
+    '3;3D/写实/生物/动物',
+    '3;3D/写实/生物/龙'
 ]
-rowNum = 5
+saveSort1 = [
+    '2;3D/写实/场景',
+    '3;3D/写实/场景/奇幻',
+    '3;3D/写实/场景/近代',
+    '3;3D/写实/场景/科幻',
+    '3;3D/写实/场景/自然',
+    '1;3D/风格化',
+    '1;3D/手绘',
+    '1;3D/素体',
+    '1;3D/图文教程',
+    '1;3D/其它'
+]
+saveSort2 = [
+    '0;2D',
+    '1;2D/角色',
+    '1;2D/生物',
+    '1;2D/场景',
+    '1;2D/概念设计',
+    '1;2D/图文教程',
+    '1;2D/中国风'
+]
 h = 15
 w = 100
+
 
 # =============================== Config ===============================
 
@@ -292,18 +323,24 @@ class App:
         self.cf.save('a', 'isCreateFolder', str(self.isCreateFolder.get()))
         self.cf.save('a', 'isDownloadVideo', str(self.isDownloadVideo.get()))
         self.cf.save('a', 'customSaveName', str(self.customSaveName.get()))
-        self.cf.save('ui', 'saveName', ','.join(self.saveName))
-        self.cf.save('ui', 'rowNum', str(self.rowNum))
+        self.cf.save('ui', 'saveSort0', ','.join(self.saveSort0))
+        self.cf.save('ui', 'saveSort1', ','.join(self.saveSort1))
+        self.cf.save('ui', 'saveSort2', ','.join(self.saveSort2))
         self.cf.save('ui', 'h', str(self.h))
         self.cf.save('ui', 'w', str(self.w))
 
     def loadConfig(self):
-        self.rowNum = int(self.cf.load('ui', 'rowNum', str(rowNum)))
         self.h = int(self.cf.load('ui', 'h', str(h)))
         self.w = int(self.cf.load('ui', 'w', str(w)))
-        load = self.cf.load('ui', 'saveName')
+        load = self.cf.load('ui', 'saveSort0')
         if load != '':
-            self.saveName = load.split(',')
+            self.saveSort0 = load.split(',')
+        load = self.cf.load('ui', 'saveSort1')
+        if load != '':
+            self.saveSort1 = load.split(',')
+        load = self.cf.load('ui', 'saveSort2')
+        if load != '':
+            self.saveSort2 = load.split(',')
         self.savePath.set(self.cf.load('a', 'savePath', 'D:/Test'))
         self.isCustomName.set(int(self.cf.load('a', 'isCustomName', '1')))
         self.isCreateFolder.set(int(self.cf.load('a', 'isCreateFolder', '0')))
@@ -336,7 +373,9 @@ class App:
         self.ui_logs_text.configure(state="disabled")
 
     @run_in_thread
-    def on_Download(self, name):
+    def on_Download(self, name, lb=None):
+        if lb is not None:
+            name = lb.get(lb.curselection()).replace(' ', '')
         self.SaveConfig()
         url = pyperclip.paste()
         self.c.isCustomName = self.isCustomName.get()
@@ -353,12 +392,37 @@ class App:
         else:
             self.app_log('剪切板中信息有误，无法爬取数据。')
 
-    def createItem(self, f, name, i):
-        r = int(i / self.rowNum)
-        c = i - r * self.rowNum
-        a = ttk.Button(f, text=name)
-        a.configure(command=lambda: self.on_Download(name))
-        a.grid(column=c, row=r, padx=1, pady=1)
+    def handler_adaptor(self, fun,  **kwds):
+        """事件处理函数的适配器，相当于中介，那个event是从那里来的呢，我也纳闷，这也许就是python的伟大之处吧"""
+        return lambda event, fun=fun, kwds=kwds: fun(event, **kwds)
+
+    def on_RightClick(self, event, lb):
+        try:
+            n = lb.get(lb.curselection()).replace(" ", '')
+            path = os.path.join(self.savePath.get(), n)
+            os.startfile(path)
+            self.app_log('打开文件夹：{}'.format(path))
+        except Exception:
+            self.app_log('路径文件夹不存在：{}'.format(path))
+
+    def createBar(self, p, data):
+        self.var = tk.StringVar()
+        sb = tk.Scrollbar(p)
+        lb = tk.Listbox(p, listvariable=self.var, height=20,
+                        yscrollcommand=sb.set, selectmode=tk.SINGLE)
+        lb.bind(sequence='<Double-Button-1>',
+                func=self.handler_adaptor(self.on_Download, lb=lb))
+        lb.bind(sequence='<Button-3>',
+                func=self.handler_adaptor(self.on_RightClick, lb=lb))
+        data = list(reversed(data))
+        for i in data:
+            index = int(i.split(';')[0])
+            name = ''
+            for a in range(index):
+                name = name + '  '
+            lb.insert(0, name + i.split(';')[1])
+        lb.pack(expand="true", fill="x", side="left")
+        sb.config(command=lb.yview)
 
     def createUI(self, master=None):
         # build ui
@@ -373,7 +437,10 @@ class App:
         self.lastSavePath = ''
         self.perclipText = tk.StringVar(value='')
         self.lastSaveText = tk.StringVar(value='打开最近保存文件夹')
-        self.saveName = saveName
+        self.saveSort0 = saveSort0
+        self.saveSort1 = saveSort1
+        self.saveSort2 = saveSort2
+        self.saveSortAll = [self.saveSort0, self.saveSort1, self.saveSort2]
         self.loadConfig()
         # 00 menu -----------------------------------
         menubar = tk.Menu(ui_main)
@@ -438,10 +505,10 @@ class App:
             command=lambda: self.on_Download(self.customSaveName.get()))
         a.pack(expand="true", fill="x", side="left")
         # 03 item -----------------------------------
-        f = ttk.LabelFrame(ui_main, text='点击按钮下载到指定文件夹')
-        f.pack(fill="x", side="top")
-        for i, name in enumerate(self.saveName):
-            self.createItem(f, name, i)
+        f1 = ttk.LabelFrame(ui_main, text='双击下载到指定路径')
+        f1.pack(fill="x", side="top")
+        for i in self.saveSortAll:
+            self.createBar(f1, i)
         # 04 logs -----------------------------------
         ui_logs = ttk.Frame(ui_main)
         ui_logs.pack(expand="true", fill="both", side="top")
@@ -450,7 +517,8 @@ class App:
         sb = ttk.Scrollbar(ui_logs)
         sb.pack(side='right', fill='y')
         self.ui_logs_text = tk.Text(ui_logs, yscrollcommand=sb.set)
-        self.ui_logs_text.configure(height=self.h, width=self.w,
+        self.ui_logs_text.configure(height=self.h,
+                                    width=self.w,
                                     state="disabled")
         self.ui_logs_text.pack(expand="true", fill="both", side="left")
         sb.config(command=self.ui_logs_text.yview)
