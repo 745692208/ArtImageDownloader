@@ -476,7 +476,7 @@ class App:
 
     def update_all_open(self):
         def get_all_open(tv, p):
-            a = {p: tv.item(p)['open']}
+            a = {tv.item(p)['values'][0]: tv.item(p)['open']}
             for i in tv.get_children(p):
                 a.update(get_all_open(tv, i))
             return a
@@ -493,10 +493,10 @@ class App:
             # 指定插入位置，0表示在头部插入，end表示在尾部插入。
             v = date['path'].replace('\\', '/')
             p = self.tv.insert(p, 'end', text=date['name'], values=v)
-            print(p)
-            print(self.all_open.get(p))
-            if self.all_open.get(p) is not None:
-                self.tv.item(p, open=self.all_open[p])  # 设置展开
+            print(v)
+            print(self.all_open.get(v))
+            if self.all_open.get(v):
+                self.tv.item(p, open=self.all_open[v])  # 设置展开
             for d in date['folders']:
                 create_item(d, p)
             return
@@ -508,8 +508,6 @@ class App:
         print(self.all_open)
 
         # 清除现有的
-        # self.tv.delete('')
-        self.tv.
         self.tv.delete(*self.tv.get_children())
 
         # 刷新
@@ -518,12 +516,12 @@ class App:
         if os.path.exists(path):
             for d in self.list_all_dir(path)['folders']:
                 create_item(d)
+        self.SaveConfig()
 
     def __init__(self):
         self.executor_ui = futures.ThreadPoolExecutor(1)
         self.cf = Config(ui_name)
         self.c = Core(self.app_log, self.cf)
-        # self.create_ui()
         self.create_ui()
         self.t = self.RepeatingTimer(1, self.set_perclipText)
         self.t.start()
