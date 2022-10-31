@@ -5,7 +5,7 @@ import os
 
 class App:
 
-    def __init__(self, master=None):
+    def create_ui_2(self, master=None):
         # build ui
         ui_main = tk.Tk() if master is None else tk.Toplevel(master)
 
@@ -114,7 +114,8 @@ class App:
         # Main widget
         self.mainwindow = ui_main
 
-    def run(self):
+    def __init__(self):
+        self.create_ui_2()
         self.mainwindow.mainloop()
 
     def right(self, event):
