@@ -20,10 +20,18 @@ import requests  # pip install --upgrade urllib3==1.25.2
 ui_name = 'Art Image Downloader'
 ui_version = '1.2.221031 by levosaber'
 
+
 # =============================== Config ===============================
+class RepeatingTimer(Timer):
+
+    def run(self):
+        while not self.finished.is_set():
+            self.function(*self.args, **self.kwargs)
+            self.finished.wait(self.interval)
 
 
 class Config:
+
     def load(self, field, key, *failValue):
         '''读取
         :param *failValue, None, 读取失败后，返回的值。默认返回'';'''
@@ -66,6 +74,7 @@ class Config:
 
 # =============================== Core ===============================
 class Core:
+
     def __init__(self, app_print=None, cf=None):
         self.app_print = app_print
         self.cf = cf
@@ -235,13 +244,9 @@ class Core:
 
 # =============================== App ===============================
 class App:
-    class RepeatingTimer(Timer):
-        def run(self):
-            while not self.finished.is_set():
-                self.function(*self.args, **self.kwargs)
-                self.finished.wait(self.interval)
 
     def run_in_thread(fun):
+
         def wrapper(*args, **kwargs):
             thread = Thread(target=fun, args=args, kwargs=kwargs)
             thread.start()
@@ -475,6 +480,7 @@ class App:
         return r
 
     def update_all_open(self):
+
         def get_all_open(tv, p):
             a = {tv.item(p)['values'][0]: tv.item(p)['open']}
             for i in tv.get_children(p):
@@ -487,6 +493,7 @@ class App:
         self.all_open = a
 
     def refresh(self):
+
         def create_item(date={}, p=''):
             if date is None:
                 return
@@ -501,11 +508,8 @@ class App:
                 create_item(d, p)
             return
 
-        print(self.all_open)
         if len(self.tv.get_children()) > 0:
-            print('has')
             self.update_all_open()
-        print(self.all_open)
 
         # 清除现有的
         self.tv.delete(*self.tv.get_children())
@@ -523,7 +527,7 @@ class App:
         self.cf = Config(ui_name)
         self.c = Core(self.app_log, self.cf)
         self.create_ui()
-        self.t = self.RepeatingTimer(1, self.set_perclipText)
+        self.t = RepeatingTimer(1, self.set_perclipText)
         self.t.start()
 
 
@@ -531,4 +535,5 @@ if __name__ == "__main__":
     app = App()
     app.mainwindow.mainloop()
     app.t.cancel()
+    time.sleep(1)
     sys.exit()
