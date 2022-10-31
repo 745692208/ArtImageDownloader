@@ -23,7 +23,7 @@ class App:
         self.dirpath.pack(expand="true", fill="x", side="left")
         ttk.Button(f2, text="浏览").pack(side="left")
         ttk.Button(f2, text="打开文件夹").pack(side="left")
-        ttk.Separator(f2, orient="vertical").pack(padx="5", side="left")
+        ttk.Separator(f2, orient="vertical").pack(fill="y", padx="5", pady="2", side="left")
         ttk.Button(f2, text="刷新").pack(side="left")
         # Options 2
         f2 = ttk.Frame(f)
@@ -89,8 +89,9 @@ class App:
             return
 
         path = 'E:/Art/Resources/图库/CG图片'
-        for d in list_all_dir(path)['folders']:
-            create_item(d)
+        if os.path.exists(path):
+            for d in list_all_dir(path)['folders']:
+                create_item(d)
 
         # 日志
         f = ttk.LabelFrame(ui_main, text='日志')
