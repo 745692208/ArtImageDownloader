@@ -18,77 +18,18 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.1.220713 by levosaber'
-saveSort0 = [
-    '0;3D',
-    '1;3D/写实',
-    '2;3D/写实/角色',
-    '3;3D/写实/角色/奇幻',
-    '4;3D/写实/角色/奇幻/男',
-    '4;3D/写实/角色/奇幻/女',
-    '3;3D/写实/角色/近代',
-    '4;3D/写实/角色/近代/男',
-    '4;3D/写实/角色/近代/女',
-    '3;3D/写实/角色/科幻',
-    '4;3D/写实/角色/科幻/男',
-    '4;3D/写实/角色/科幻/女',
-    '2;3D/写实/生物',
-    '3;3D/写实/生物/类人型',
-    '3;3D/写实/生物/机械类',
-    '3;3D/写实/生物/爬行类',
-    '3;3D/写实/生物/水栖类',
-    '3;3D/写实/生物/动物',
-    '3;3D/写实/生物/龙'
-]
-saveSort1 = [
-    '2;3D/写实/场景',
-    '3;3D/写实/场景/奇幻',
-    '3;3D/写实/场景/近代',
-    '3;3D/写实/场景/科幻',
-    '3;3D/写实/场景/自然',
-    '1;3D/风格化',
-    '2;3D/风格化/角色',
-    '3;3D/风格化/角色/奇幻',
-    '4;3D/风格化/角色/奇幻/男',
-    '4;3D/风格化/角色/奇幻/女',
-    '1;3D/手绘',
-    '1;3D/素体',
-    '1;3D/图文教程',
-    '1;3D/其它'
-]
-saveSort2 = [
-    '0;2D',
-    '1;2D/角色',
-    '1;2D/生物',
-    '1;2D/场景',
-    '1;2D/概念设计',
-    '1;2D/图文教程',
-    '1;2D/中国风'
-]
-h = 15
-w = 100
-item = {'path': '3D', 'sub': []}
-itemAll = [
-    {'path': '3D', 'sub': [
-        {'path': '3D/写实', 'sub': [
-            {'path': '3D/写实/角色', 'sub': []},
-            {'path': '3D/写实/生物', 'sub': []},
-            {'path': '3D/写实/场景', 'sub': []}
-            ]},
-        {'path': '3D/风格化', 'sub': []},
-        {'path': '3D/手绘', 'sub': []},
-        ]},
-    {'path': '2D', 'sub': []},
-    {'path': '图文教程', 'sub': []}
-]
-itemPadx = 20
+ui_version = '1.3.221108 by levosaber'
 
 
 # =============================== Config ===============================
+class RepeatingTimer(Timer):
+    def run(self):
+        while not self.finished.is_set():
+            self.function(*self.args, **self.kwargs)
+            self.finished.wait(self.interval)
 
 
 class Config:
-
     def load(self, field, key, *failValue):
         '''读取
         :param *failValue, None, 读取失败后，返回的值。默认返回'';'''
@@ -131,7 +72,6 @@ class Config:
 
 # =============================== Core ===============================
 class Core:
-
     def __init__(self, app_print=None, cf=None):
         self.app_print = app_print
         self.cf = cf
@@ -218,8 +158,7 @@ class Core:
         self.print_log('作者：{}，共计{}个作品，现进行作品分析... '.format(username, len(data)))
         futures_list = []
         for wrok in data:
-            futures_list.append(
-                self.executor.submit(self.get_work, wrok['permalink']))
+            futures_list.append(self.executor.submit(self.get_work, wrok['permalink']))
         futures.wait(futures_list)
         self.print_log("爬取用户作品的下载任务已全部完成；\n")
 
@@ -251,8 +190,7 @@ class Core:
                 file_format = url.rsplit('.', 1)[1]  # .jpg
                 name = self.make_name(work_name, i, file_format)
                 self.print_log('图片：{}'.format(url))
-                futures_list.append(
-                    self.executor.submit(self.down_file, url, name, path))
+                futures_list.append(self.executor.submit(self.down_file, url, name, path))
             elif asset['asset_type'] == 'video_clip' and self.isDownloadVideo:
                 url = re.findall(r"src='(.*?)'", asset['player_embedded'])[0]
                 r = self.session_get(url)
@@ -260,9 +198,7 @@ class Core:
                 file_format = source_media.rsplit('.', 1)[1]  # .jpg
                 name = self.make_name(work_name, i, file_format)
                 self.print_log('视频：{}'.format(source_media))
-                futures_list.append(
-                    self.executor.submit(self.down_file, source_media, name,
-                                         path))
+                futures_list.append(self.executor.submit(self.down_file, source_media, name, path))
         futures.wait(futures_list)
         self.print_log("下载任务已完成：{}\n".format(work_id))
 
@@ -281,9 +217,7 @@ class Core:
         r = self.session_get(url).text
         # 图片
         urls = re.findall(r'jpeg 1.5x, //(.*?) 2x', r)
-        work_name = '{}-{}'.format(
-            url.rsplit('/', 2)[1],
-            url.rsplit('/', 2)[2])  # SwordGirl-402912
+        work_name = '{}-{}'.format(url.rsplit('/', 2)[1], url.rsplit('/', 2)[2])  # SwordGirl-402912
         path = self.make_save_path(work_name)
         self.check_make_dir(path)
         futures_list = []
@@ -291,8 +225,7 @@ class Core:
             url = 'https://' + url
             name = self.make_name(work_name, i, 'jpeg')
             self.print_log('图片：{}'.format(url))
-            futures_list.append(
-                self.executor.submit(self.down_file, url, name, path))
+            futures_list.append(self.executor.submit(self.down_file, url, name, path))
         # 视频
         if self.isDownloadVideo:
             urls_video = re.findall(r'www(.*?)mp4', r)
@@ -301,25 +234,14 @@ class Core:
                 video_url = 'https://www' + video_url + 'mp4'
                 name = self.make_name(work_name, i, 'mp4')
                 self.print_log('视频：{}'.format(video_url))
-                futures_list.append(
-                    self.executor.submit(self.down_file, video_url, name,
-                                         path))
+                futures_list.append(self.executor.submit(self.down_file, video_url, name, path))
         futures.wait(futures_list)
         self.print_log("下载任务已完成：{}\n".format(work_name))
 
 
 # =============================== App ===============================
 class App:
-
-    class RepeatingTimer(Timer):
-
-        def run(self):
-            while not self.finished.is_set():
-                self.function(*self.args, **self.kwargs)
-                self.finished.wait(self.interval)
-
     def run_in_thread(fun):
-
         def wrapper(*args, **kwargs):
             thread = Thread(target=fun, args=args, kwargs=kwargs)
             thread.start()
@@ -347,32 +269,18 @@ class App:
         self.cf.save('a', 'isCustomName', str(self.isCustomName.get()))
         self.cf.save('a', 'isCreateFolder', str(self.isCreateFolder.get()))
         self.cf.save('a', 'isDownloadVideo', str(self.isDownloadVideo.get()))
-        self.cf.save('a', 'customSaveName', str(self.customSaveName.get()))
-        self.cf.save('ui', 'saveSort0', ','.join(self.saveSort0))
-        self.cf.save('ui', 'saveSort1', ','.join(self.saveSort1))
-        self.cf.save('ui', 'saveSort2', ','.join(self.saveSort2))
-        self.cf.save('ui', 'h', str(self.h))
-        self.cf.save('ui', 'w', str(self.w))
+        self.cf.save('a', 'exclude', self.exclude.get())
+        self.update_all_open()
+        self.cf.save('a', 'all_open', str(self.all_open))
 
     def loadConfig(self):
-        self.h = int(self.cf.load('ui', 'h', str(h)))
-        self.w = int(self.cf.load('ui', 'w', str(w)))
-        load = self.cf.load('ui', 'saveSort0')
-        if load != '':
-            self.saveSort0 = load.split(',')
-        load = self.cf.load('ui', 'saveSort1')
-        if load != '':
-            self.saveSort1 = load.split(',')
-        load = self.cf.load('ui', 'saveSort2')
-        if load != '':
-            self.saveSort2 = load.split(',')
         self.savePath.set(self.cf.load('a', 'savePath', 'D:/Test'))
         self.isCustomName.set(int(self.cf.load('a', 'isCustomName', '1')))
         self.isCreateFolder.set(int(self.cf.load('a', 'isCreateFolder', '0')))
-        self.isDownloadVideo.set(int(self.cf.load('a', 'isDownloadVideo',
-                                                  '1')))
-        self.customSaveName.set(self.cf.load('a', 'customSaveName', 'x'))
+        self.isDownloadVideo.set(int(self.cf.load('a', 'isDownloadVideo', '1')))
         self.c.lastSavePath = self.cf.load('a', 'lastSavePath', 'D:/Test')
+        self.exclude.set(self.cf.load('a', 'exclude', '素模'))
+        self.all_open = eval(self.cf.load('a', 'all_open', '{}'))
 
     def on_OpenLastFolder(self):
         os.startfile(self.c.lastSavePath)
@@ -389,6 +297,14 @@ class App:
             self.savePath.set(dir)
             self.SaveConfig()
 
+    def on_if_existing(self):
+        code = pyperclip.paste()[-6:]
+        path = self.savePath.get()
+        if code in str(self.list_all_dir(path)):
+            self.app_log('已存在！')
+        else:
+            self.app_log('不存在！')
+
     def app_log(self, value):
         time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         value = '[{}]{}'.format(time_date, value)
@@ -398,15 +314,14 @@ class App:
         self.ui_logs_text.configure(state="disabled")
 
     @run_in_thread
-    def on_Download(self, name, lb=None):
-        if lb is not None:
-            name = lb.get(lb.curselection()).replace(' ', '')
+    def on_Download(self):
         self.SaveConfig()
         url = pyperclip.paste()
         self.c.isCustomName = self.isCustomName.get()
         self.c.isCreateFolder = self.isCreateFolder.get()
         self.c.isDownloadVideo = self.isDownloadVideo.get()
-        self.c.savePath = os.path.join(self.savePath.get(), name)
+        path = self.tv.item(self.selected_id.get())['values'][0]
+        self.c.savePath = path
         if 'zbrushcentral' in url:
             self.c.zb_get_work(url)
         elif 'artstation' in url:
@@ -417,55 +332,20 @@ class App:
         else:
             self.app_log('剪切板中信息有误，无法爬取数据。')
 
-    def handler_adaptor(self, fun,  **kwds):
-        """事件处理函数的适配器，相当于中介，那个event是从那里来的呢，我也纳闷，这也许就是python的伟大之处吧"""
-        return lambda event, fun=fun, kwds=kwds: fun(event, **kwds)
-
-    def on_RightClick(self, event, lb):
-        try:
-            n = lb.get(lb.curselection()).replace(" ", '')
-            path = os.path.join(self.savePath.get(), n)
-            os.startfile(path)
-            self.app_log('打开文件夹：{}'.format(path))
-        except Exception:
-            self.app_log('路径文件夹不存在：{}'.format(path))
-
-    def createBar(self, p, data):
-        self.var = tk.StringVar()
-        sb = tk.Scrollbar(p)
-        lb = tk.Listbox(p, listvariable=self.var, height=20,
-                        yscrollcommand=sb.set, selectmode=tk.SINGLE)
-        lb.bind(sequence='<Double-Button-1>',
-                func=self.handler_adaptor(self.on_Download, lb=lb))
-        lb.bind(sequence='<Button-3>',
-                func=self.handler_adaptor(self.on_RightClick, lb=lb))
-        data = list(reversed(data))
-        for i in data:
-            index = int(i.split(';')[0])
-            name = ''
-            for a in range(index):
-                name = name + '  '
-            lb.insert(0, name + i.split(';')[1])
-        lb.pack(expand="true", fill="x", side="left")
-        sb.config(command=lb.yview)
-
-    def createUI(self, master=None):
+    def create_ui(self, master=None):
         # build ui
         ui_main = tk.Tk() if master is None else tk.Toplevel(master)
         ui_main.title('{} {} '.format(ui_name, ui_version))
         # build variable
         self.savePath = tk.StringVar(value='D:/Test')
-        self.customSaveName = tk.StringVar(value='')
         self.isCustomName = tk.IntVar(value=1)
         self.isDownloadVideo = tk.IntVar(value=1)
         self.isCreateFolder = tk.IntVar(value=1)
         self.lastSavePath = ''
         self.perclipText = tk.StringVar(value='')
         self.lastSaveText = tk.StringVar(value='打开最近保存文件夹')
-        self.saveSort0 = saveSort0
-        self.saveSort1 = saveSort1
-        self.saveSort2 = saveSort2
-        self.saveSortAll = [self.saveSort0, self.saveSort1, self.saveSort2]
+        self.exclude = tk.StringVar(value='')
+        self.all_open = {}
         self.loadConfig()
         # 00 menu -----------------------------------
         menubar = tk.Menu(ui_main)
@@ -481,9 +361,7 @@ class App:
         a = 'https://www.artstation.com/'
         about.add_command(label='ArtStion', command=lambda: web.open(a))
         a = 'https://www.zbrushcentral.com/'
-        about.add_command(
-            label='ZBrushcentral',
-            command=lambda: web.open('https://www.zbrushcentral.com/'))
+        about.add_command(label='ZBrushcentral', command=lambda: web.open('https://www.zbrushcentral.com/'))
         menubar.add_cascade(label='About', menu=about)
         ui_main['menu'] = menubar
         # 01 options -----------------------------------
@@ -498,7 +376,19 @@ class App:
         # btn 打开文件夹-----
         a = ttk.Button(ui_f1, text="打开文件夹", command=self.on_OpenFolder)
         a.pack(side="left")
+        # btn 刷新-----
+        a = ttk.Separator(ui_f1, orient="vertical")
+        a.pack(fill="y", padx="5", pady="2", side="left")
+        a = ttk.Button(ui_f1, text="刷新", command=self.refresh)
+        a.pack(side="left")
         # 02 options -----------------------------------
+        f = ttk.Frame(ui_main)
+        f.pack(fill="x", side="top")
+        a = ttk.Label(f, justify="left", text="排除关键字(','分割)：")
+        a.pack(side="left")
+        a = ttk.Entry(f, textvariable=self.exclude)
+        a.pack(expand="true", fill="x", side="left")
+        # 03 options -----------------------------------
         ui_f2 = ttk.Frame(ui_main)
         ui_f2.pack(fill="x", side="top")
         # cb 自定义命名-----
@@ -514,48 +404,137 @@ class App:
         a = ttk.Button(ui_f2, textvariable=self.lastSaveText)
         a.configure(command=self.on_OpenLastFolder)
         a.pack(expand="true", fill="x", side="left")
-        # 03 item -----------------------------------
-        f = ttk.LabelFrame(ui_main, text='自定义保存名字')
-        f.pack(fill="x", side="top")
-        a = ttk.Entry(f, textvariable=self.customSaveName)
-        a.pack(side="left")
-        a = ttk.Button(
-            f,
-            text='打开文件夹',
-            command=lambda: self.on_OpenFolder(self.customSaveName.get()))
-        a.pack(side="left")
-        a = ttk.Button(
-            f,
-            text='下载到此处',
-            command=lambda: self.on_Download(self.customSaveName.get()))
+
+        # Treeview
+        self.selected_id = tk.StringVar()
+
+        self.right_menu = tk.Menu(tearoff=False)
+        self.right_menu.add_command(label='下载到此', command=self.on_Download)
+        self.right_menu.add_separator()
+        self.right_menu.add_command(label='打开目录', command=self.open_folder)
+
+        f = ttk.LabelFrame(ui_main, text='目录')
+        f.pack(expand="true", fill="both", side="top")
+
+        self.tv = ttk.Treeview(f, show='tree', displaycolumns=(), height=20)
+        self.tv.pack(expand="true", fill="both", side="left")
+        self.tv.bind('<Button-3>', self.on_RightClick)  # 打开右键菜单
+
+        sb = tk.Scrollbar(f)
+        sb.pack(side="left", fill="y")
+        sb['command'] = self.tv.yview
+        self.tv.config(yscrollcommand=sb.set)  # 自动设置滚动条滑动幅度
+
+        self.refresh()
+
+        # 04 logs 日志 -----------------------------------
+        f = ttk.LabelFrame(ui_main, text='日志')
+        f.pack(fill="both", side="top")
+
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
+
+        # 剪切板提醒
+        a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
         a.pack(expand="true", fill="x", side="left")
-        # 03 item -----------------------------------
-        f1 = ttk.LabelFrame(ui_main, text='双击下载到指定路径')
-        f1.pack(fill="x", side="top")
-        for i in self.saveSortAll:
-            self.createBar(f1, i)
-        # 04 logs -----------------------------------
-        ui_logs = ttk.Frame(ui_main)
-        ui_logs.pack(expand="true", fill="both", side="top")
-        a = ttk.Label(ui_logs, justify="left", textvariable=self.perclipText)
-        a.pack(expand="false", fill="x", side="top")
-        sb = ttk.Scrollbar(ui_logs)
+
+        # btn 是否存在-----
+        a = ttk.Button(f2, text='判断是否存在')
+        a.configure(command=self.on_if_existing)
+        a.pack(side="left")
+
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
+
+        sb = ttk.Scrollbar(f2)
         sb.pack(side='right', fill='y')
-        self.ui_logs_text = tk.Text(ui_logs, yscrollcommand=sb.set)
-        self.ui_logs_text.configure(height=self.h,
-                                    width=self.w,
-                                    state="disabled")
+        self.ui_logs_text = tk.Text(f2, yscrollcommand=sb.set)
         self.ui_logs_text.pack(expand="true", fill="both", side="left")
+        self.ui_logs_text.configure(height=10, state="disabled")
         sb.config(command=self.ui_logs_text.yview)
+
         # Main widget
         self.mainwindow = ui_main
+
+    def on_RightClick(self, event):
+        id = self.tv.identify_row(event.y)
+        if id:
+            self.selected_id.set(id)
+            self.tv.selection_set(id)  # 设置tv当前选择项
+            self.right_menu.post(event.x_root, event.y_root)
+
+    def open_folder(self):
+        path = self.tv.item(self.selected_id.get())['values'][0]
+        os.startfile(path)
+
+    def save(self):
+        self.on_Download()
+        pass
+
+    def list_all_dir(self, dirpath):
+        name = os.path.split(dirpath)[1]
+
+        # 筛选
+        if name in self.exclude_list:
+            return
+
+        all_path = [f'{dirpath}/{i}' for i in os.listdir(dirpath)]
+        folders = [i for i in all_path if os.path.isdir(i)]
+        files = [i for i in all_path if os.path.isdir(i) is False]
+
+        r = {
+            'name': name,
+            'path': dirpath,
+            'folders': [self.list_all_dir(i) for i in folders],
+            'files': files,
+        }
+        return r
+
+    def update_all_open(self):
+        def get_all_open(tv, p):
+            a = {tv.item(p)['values'][0]: tv.item(p)['open']}
+            for i in tv.get_children(p):
+                a.update(get_all_open(tv, i))
+            return a
+
+        a = {}
+        for i in self.tv.get_children():
+            a.update(get_all_open(self.tv, i))
+        self.all_open = a
+
+    def refresh(self):
+        def create_item(date={}, p=''):
+            if date is None:
+                return
+            # 指定插入位置，0表示在头部插入，end表示在尾部插入。
+            v = date['path'].replace('\\', '/')
+            p = self.tv.insert(p, 'end', text=date['name'], values=v)
+            if self.all_open.get(v):
+                self.tv.item(p, open=self.all_open[v])  # 设置展开
+            for d in date['folders']:
+                create_item(d, p)
+            return
+
+        if len(self.tv.get_children()) > 0:
+            self.update_all_open()
+
+        # 清除现有的
+        self.tv.delete(*self.tv.get_children())
+
+        # 刷新
+        path = self.savePath.get()
+        self.exclude_list = self.exclude.get().split(',')
+        if os.path.exists(path):
+            for d in self.list_all_dir(path)['folders']:
+                create_item(d)
+        self.SaveConfig()
 
     def __init__(self):
         self.executor_ui = futures.ThreadPoolExecutor(1)
         self.cf = Config(ui_name)
         self.c = Core(self.app_log, self.cf)
-        self.createUI()
-        self.t = self.RepeatingTimer(1, self.set_perclipText)
+        self.create_ui()
+        self.t = RepeatingTimer(1, self.set_perclipText)
         self.t.start()
 
 
@@ -563,4 +542,5 @@ if __name__ == "__main__":
     app = App()
     app.mainwindow.mainloop()
     app.t.cancel()
+    time.sleep(1)
     sys.exit()
