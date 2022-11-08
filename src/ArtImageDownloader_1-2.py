@@ -18,12 +18,11 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.2.221031 by levosaber'
+ui_version = '1.3.221108 by levosaber'
 
 
 # =============================== Config ===============================
 class RepeatingTimer(Timer):
-
     def run(self):
         while not self.finished.is_set():
             self.function(*self.args, **self.kwargs)
@@ -31,7 +30,6 @@ class RepeatingTimer(Timer):
 
 
 class Config:
-
     def load(self, field, key, *failValue):
         '''读取
         :param *failValue, None, 读取失败后，返回的值。默认返回'';'''
@@ -74,7 +72,6 @@ class Config:
 
 # =============================== Core ===============================
 class Core:
-
     def __init__(self, app_print=None, cf=None):
         self.app_print = app_print
         self.cf = cf
@@ -244,9 +241,7 @@ class Core:
 
 # =============================== App ===============================
 class App:
-
     def run_in_thread(fun):
-
         def wrapper(*args, **kwargs):
             thread = Thread(target=fun, args=args, kwargs=kwargs)
             thread.start()
@@ -301,6 +296,14 @@ class App:
         if dir != '.':
             self.savePath.set(dir)
             self.SaveConfig()
+
+    def on_if_existing(self):
+        code = pyperclip.paste()[-6:]
+        path = self.savePath.get()
+        if code in str(self.list_all_dir(path)):
+            self.app_log('已存在！')
+        else:
+            self.app_log('不存在！')
 
     def app_log(self, value):
         time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -428,9 +431,17 @@ class App:
         f = ttk.LabelFrame(ui_main, text='日志')
         f.pack(fill="both", side="top")
 
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
+
         # 剪切板提醒
-        a = ttk.Label(f, justify="left", textvariable=self.perclipText)
-        a.pack(expand="false", fill="x", side="top")
+        a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
+        a.pack(expand="true", fill="x", side="left")
+
+        # btn 是否存在-----
+        a = ttk.Button(f2, text='判断是否存在')
+        a.configure(command=self.on_if_existing)
+        a.pack(side="left")
 
         f2 = ttk.Frame(f)
         f2.pack(fill="x", side="top")
@@ -480,7 +491,6 @@ class App:
         return r
 
     def update_all_open(self):
-
         def get_all_open(tv, p):
             a = {tv.item(p)['values'][0]: tv.item(p)['open']}
             for i in tv.get_children(p):
@@ -493,15 +503,12 @@ class App:
         self.all_open = a
 
     def refresh(self):
-
         def create_item(date={}, p=''):
             if date is None:
                 return
             # 指定插入位置，0表示在头部插入，end表示在尾部插入。
             v = date['path'].replace('\\', '/')
             p = self.tv.insert(p, 'end', text=date['name'], values=v)
-            print(v)
-            print(self.all_open.get(v))
             if self.all_open.get(v):
                 self.tv.item(p, open=self.all_open[v])  # 设置展开
             for d in date['folders']:
