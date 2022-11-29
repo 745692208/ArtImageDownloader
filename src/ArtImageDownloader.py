@@ -18,11 +18,12 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.3.221108 by levosaber'
+ui_version = '1.3.1.221130 by levosaber'
 
 
 # =============================== Config ===============================
 class RepeatingTimer(Timer):
+
     def run(self):
         while not self.finished.is_set():
             self.function(*self.args, **self.kwargs)
@@ -30,6 +31,7 @@ class RepeatingTimer(Timer):
 
 
 class Config:
+
     def load(self, field, key, *failValue):
         '''读取
         :param *failValue, None, 读取失败后，返回的值。默认返回'';'''
@@ -72,6 +74,7 @@ class Config:
 
 # =============================== Core ===============================
 class Core:
+
     def __init__(self, app_print=None, cf=None):
         self.app_print = app_print
         self.cf = cf
@@ -241,7 +244,9 @@ class Core:
 
 # =============================== App ===============================
 class App:
+
     def run_in_thread(fun):
+
         def wrapper(*args, **kwargs):
             thread = Thread(target=fun, args=args, kwargs=kwargs)
             thread.start()
@@ -296,6 +301,13 @@ class App:
         if dir != '.':
             self.savePath.set(dir)
             self.SaveConfig()
+
+    def on_down_current(self):
+        id = self.tv.selection()[0]
+        if id:
+            self.selected_id.set(id)
+            self.tv.selection_set(id)  # 设置tv当前选择项
+        self.on_Download()
 
     def on_if_existing(self):
         code = pyperclip.paste()[-6:]
@@ -437,7 +449,10 @@ class App:
         # 剪切板提醒
         a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
         a.pack(expand="true", fill="x", side="left")
-
+        # btn 下载-----
+        a = ttk.Button(f2, text='下载到选择项')
+        a.configure(command=self.on_down_current)
+        a.pack(side="left")
         # btn 是否存在-----
         a = ttk.Button(f2, text='判断是否存在')
         a.configure(command=self.on_if_existing)
@@ -491,6 +506,7 @@ class App:
         return r
 
     def update_all_open(self):
+
         def get_all_open(tv, p):
             a = {tv.item(p)['values'][0]: tv.item(p)['open']}
             for i in tv.get_children(p):
@@ -503,6 +519,7 @@ class App:
         self.all_open = a
 
     def refresh(self):
+
         def create_item(date={}, p=''):
             if date is None:
                 return
