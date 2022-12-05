@@ -18,7 +18,7 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.3.1.221130 by levosaber'
+ui_version = '1.3.2.221205by levosaber'
 
 
 # =============================== Config ===============================
@@ -525,7 +525,7 @@ class App:
                 return
             # 指定插入位置，0表示在头部插入，end表示在尾部插入。
             v = date['path'].replace('\\', '/')
-            p = self.tv.insert(p, 'end', text=date['name'], values=v)
+            p = self.tv.insert(p, 'end', text=date['name'], values=[v])
             if self.all_open.get(v):
                 self.tv.item(p, open=self.all_open[v])  # 设置展开
             for d in date['folders']:
