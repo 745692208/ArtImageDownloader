@@ -18,7 +18,7 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.3.2.221205by levosaber'
+ui_version = '1.3.3.230203 by levosaber'
 
 
 # =============================== Config ===============================
@@ -84,6 +84,7 @@ class Core:
         self.isCustomName = True
         self.isCreateFolder = True
         self.isDownloadVideo = False
+        self.useAutoDownload = False
         self.savePath = ''
         self.lastSavePath = ''
 
@@ -256,6 +257,12 @@ class App:
 
     def set_perclipText(self):
         text = '剪切板：{}'.format(pyperclip.paste()[0:75])
+        if self.useAutoDownload.get() == 1:
+            if text not in self.perclipText.get():
+                try:
+                    self.on_down_current()
+                except Exception as e:
+                    print(e)
         self.perclipText.set(text.replace('\n', '').replace('\r', ''))
         text = '打开最近保存：' + self.c.lastSavePath
         self.lastSaveText.set(text)
@@ -274,6 +281,7 @@ class App:
         self.cf.save('a', 'isCustomName', str(self.isCustomName.get()))
         self.cf.save('a', 'isCreateFolder', str(self.isCreateFolder.get()))
         self.cf.save('a', 'isDownloadVideo', str(self.isDownloadVideo.get()))
+        self.cf.save('a', 'useAutoDownload', str(self.useAutoDownload.get()))
         self.cf.save('a', 'exclude', self.exclude.get())
         self.update_all_open()
         self.cf.save('a', 'all_open', str(self.all_open))
@@ -283,6 +291,7 @@ class App:
         self.isCustomName.set(int(self.cf.load('a', 'isCustomName', '1')))
         self.isCreateFolder.set(int(self.cf.load('a', 'isCreateFolder', '0')))
         self.isDownloadVideo.set(int(self.cf.load('a', 'isDownloadVideo', '1')))
+        self.useAutoDownload.set(int(self.cf.load('a', 'useAutoDownload', '1')))
         self.c.lastSavePath = self.cf.load('a', 'lastSavePath', 'D:/Test')
         self.exclude.set(self.cf.load('a', 'exclude', '素模'))
         self.all_open = eval(self.cf.load('a', 'all_open', '{}'))
@@ -313,9 +322,9 @@ class App:
         code = pyperclip.paste()[-6:]
         path = self.savePath.get()
         if code in str(self.list_all_dir(path)):
-            self.app_log('已存在！')
+            self.app_log(f'{code} 已存在！')
         else:
-            self.app_log('不存在！')
+            self.app_log(f'{code} 不存在！')
 
     def app_log(self, value):
         time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -351,6 +360,7 @@ class App:
         # build variable
         self.savePath = tk.StringVar(value='D:/Test')
         self.isCustomName = tk.IntVar(value=1)
+        self.useAutoDownload = tk.IntVar(value=0)
         self.isDownloadVideo = tk.IntVar(value=1)
         self.isCreateFolder = tk.IntVar(value=1)
         self.lastSavePath = ''
@@ -449,6 +459,9 @@ class App:
         # 剪切板提醒
         a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
         a.pack(expand="true", fill="x", side="left")
+        # 快速下载-----
+        a = ttk.Checkbutton(f2, text="自动检测下载", variable=self.useAutoDownload)
+        a.pack(side="left")
         # btn 下载-----
         a = ttk.Button(f2, text='下载到选择项')
         a.configure(command=self.on_down_current)
