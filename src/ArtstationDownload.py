@@ -35,17 +35,19 @@ class App:
     def make_name(self, j, index, url):
         username = j['user']['username']
         work_id = j['hash_id']
-        ext = url.rsplit('.', 1)[1][0:3]  # jpg
+        ext = url.rsplit('.', 1)[1]  # jpg
+        if '?' in ext:
+            ext = ext.rsplit('?', 1)[0]
         return f'{username}-{work_id}-{index}.{ext}'
 
     def download(self):
         save_path = self.savePath.get()
-        p = pyperclip.paste()
-        j = json.loads(p)
-
+        if os.path.exists(save_path) is False:
+            os.makedirs(save_path)
+        j = json.loads(pyperclip.paste())
         for i, item in enumerate(j['assets']):
             print()
-            if item['has_image']:
+            if item['asset_type'] == 'image':
                 url = item['image_url']
                 name = self.make_name(j, i, url)
                 print(name, url)
@@ -57,30 +59,22 @@ class App:
         url = 'https://www.artstation.com/projects/{}.json'.format(work_id)
         webbrowser.open(url)
 
-    def __init__(self, master=None):
-        self.toplevel = tk.Tk() if master is None else tk.Toplevel(master)
-        self.toplevel.title('ArtstationDownload v1.0')
-        self.toplevel.geometry('500x100')
+    def __init__(self):
+        toplevel = tk.Tk()
+        toplevel.title('ArtstationDownload v1.0')
+        toplevel.geometry('500x100')
+        # Var
         self.savePath = tk.StringVar(value='D:/Test')
-        # build ui
-        self.f_main = ttk.Frame(self.toplevel)
-        self.f1_savepath = ttk.Labelframe(self.f_main)
-        self.entry_savepath = ttk.Entry(self.f1_savepath, textvariable=self.savePath)
-        self.entry_savepath.pack(fill='x', side='top')
-        self.f1_savepath.configure(height='200', text='Save Path', width='200')
-        self.f1_savepath.pack(fill='x', side='top')
-        self.button_open_page = ttk.Button(self.f_main, command=self.open_page)
-        self.button_open_page.configure(text='Open Json Page by Clipboard')
-        self.button_open_page.pack(fill='x', side='top')
-        self.button_download = ttk.Button(self.f_main, command=self.download)
-        self.button_download.configure(text='Download by Clipboard')
-        self.button_download.pack(fill='x', side='top')
-        self.f_main.configure(height='200', width='200')
-        self.f_main.pack(fill='x', side='top')
-        self.toplevel.configure(height='200', width='200')
-
-        # Main widget
-        self.mainwindow = self.toplevel
+        # UI
+        f0 = ttk.Frame(toplevel)
+        f0.pack(fill='x', side='top')
+        f1 = ttk.Labelframe(f0, text='Save Path')
+        f1.pack(fill='x', side='top')
+        ttk.Entry(f1, textvariable=self.savePath).pack(fill='x', side='top')
+        ttk.Button(f0, text='Open Json Page by Clipboard', command=self.open_page).pack(fill='x', side='top')
+        ttk.Button(f0, text='Download by Clipboard', command=self.download).pack(fill='x', side='top')
+        # main window
+        self.mainwindow = toplevel
 
     def run(self):
         self.mainwindow.mainloop()
