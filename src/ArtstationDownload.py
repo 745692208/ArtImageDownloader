@@ -4,15 +4,16 @@ import json
 import os
 import webbrowser
 import threading
+import re
+import time
+import sys
 
 import tkinter as tk
 import tkinter.ttk as ttk
 
 
 class App:
-
     def run_in_thread(fun):
-
         def wrapper(*args, **kwargs):
             thread = threading.Thread(target=fun, args=args, kwargs=kwargs)
             thread.start()
@@ -46,12 +47,16 @@ class App:
             os.makedirs(save_path)
         j = json.loads(pyperclip.paste())
         for i, item in enumerate(j['assets']):
-            print()
             if item['asset_type'] == 'image':
                 url = item['image_url']
-                name = self.make_name(j, i, url)
-                print(name, url)
-                self.down_file(url, name, save_path)
+            elif item['asset_type'] == 'video_clip':
+                url = re.findall(r"src='(.*?)'", item['player_embedded'])[0]
+                r = self.session.get(url)
+                url = re.findall(r'src="(.*?)" type=', r.text)[0]
+            # 下载
+            name = self.make_name(j, i, url)
+            self.down_file(url, name, save_path)
+            print(name, url)
 
     def open_page(self):
         p = pyperclip.paste()
@@ -60,6 +65,8 @@ class App:
         webbrowser.open(url)
 
     def __init__(self):
+        self.session = requests.session()
+        # TK
         toplevel = tk.Tk()
         toplevel.title('ArtstationDownload v1.0')
         toplevel.geometry('500x100')
@@ -83,3 +90,5 @@ class App:
 if __name__ == '__main__':
     app = App()
     app.run()
+    time.sleep(1)
+    sys.exit()
