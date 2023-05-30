@@ -8,6 +8,7 @@ import sys
 import time
 import configparser
 import webbrowser as web
+import json
 
 from threading import Timer, Thread
 from concurrent import futures
@@ -23,7 +24,6 @@ ui_version = '1.3.3.230203 by levosaber'
 
 # =============================== Config ===============================
 class RepeatingTimer(Timer):
-
     def run(self):
         while not self.finished.is_set():
             self.function(*self.args, **self.kwargs)
@@ -31,7 +31,6 @@ class RepeatingTimer(Timer):
 
 
 class Config:
-
     def load(self, field, key, *failValue):
         '''读取
         :param *failValue, None, 读取失败后，返回的值。默认返回'';'''
@@ -74,7 +73,6 @@ class Config:
 
 # =============================== Core ===============================
 class Core:
-
     def __init__(self, app_print=None, cf=None):
         self.app_print = app_print
         self.cf = cf
@@ -245,9 +243,7 @@ class Core:
 
 # =============================== App ===============================
 class App:
-
     def run_in_thread(fun):
-
         def wrapper(*args, **kwargs):
             thread = Thread(target=fun, args=args, kwargs=kwargs)
             thread.start()
@@ -353,6 +349,60 @@ class App:
         else:
             self.app_log('剪切板中信息有误，无法爬取数据。')
 
+    # 新增的临时解决403方案=========================================================
+    def run_in_thread(fun):
+        def wrapper(*args, **kwargs):
+            thread = Thread(target=fun, args=args, kwargs=kwargs)
+            thread.start()
+            return thread
+
+        return wrapper
+
+    @run_in_thread
+    def down_file(self, url, file_name, save_path):  # 下载图片
+        '''下载输入的网址文件，并对其命名，保存到指定位置。
+        :param url, str, 输入网页地址，如：https://cdna.artstation.com/p/1.jpg ;
+        :param file_name, str, 文件保存名字，比如：awaw-5X9mYA-1.jpg ;
+        :param save_path. str, 保存地址，比如：E:/asd '''
+        session = requests.session()
+        r = session.get(url)  # 下载图片
+        path = os.path.join(save_path, file_name)  # 保存路径和文件名字合并
+        with open(path, 'wb') as f:
+            f.write(r.content)
+
+    def make_name(self, j, index, url):
+        username = j['user']['username']
+        work_id = j['hash_id']
+        ext = url.rsplit('.', 1)[1]  # jpg
+        if '?' in ext:
+            ext = ext.rsplit('?', 1)[0]
+        return f'{username}-{work_id}-{index}.{ext}'
+
+    def download_by_json(self):
+        save_path = self.tv.item(self.selected_id.get())['values'][0]
+        if os.path.exists(save_path) is False:
+            os.makedirs(save_path)
+        j = json.loads(pyperclip.paste())
+        for i, item in enumerate(j['assets']):
+            if item['asset_type'] == 'image':
+                url = item['image_url']
+            elif item['asset_type'] == 'video_clip':
+                url = re.findall(r"src='(.*?)'", item['player_embedded'])[0]
+                r = self.session.get(url)
+                url = re.findall(r'src="(.*?)" type=', r.text)[0]
+            # 下载
+            name = self.make_name(j, i, url)
+            self.down_file(url, name, save_path)
+            print(name, url)
+
+    def open_page(self):
+        p = pyperclip.paste()
+        work_id = p.rsplit('/', 1)[1]
+        url = 'https://www.artstation.com/projects/{}.json'.format(work_id)
+        web.open(url)
+
+    # 新增的临时解决403方案=========================================================
+
     def create_ui(self, master=None):
         # build ui
         ui_main = tk.Tk() if master is None else tk.Toplevel(master)
@@ -432,6 +482,7 @@ class App:
 
         self.right_menu = tk.Menu(tearoff=False)
         self.right_menu.add_command(label='下载到此', command=self.on_Download)
+        self.right_menu.add_command(label='下载到此 by Json', command=self.download_by_json)
         self.right_menu.add_separator()
         self.right_menu.add_command(label='打开目录', command=self.open_folder)
 
@@ -470,6 +521,7 @@ class App:
         a = ttk.Button(f2, text='判断是否存在')
         a.configure(command=self.on_if_existing)
         a.pack(side="left")
+        ttk.Button(f2, text='Json Page', command=self.open_page).pack(fill='x', side='top')
 
         f2 = ttk.Frame(f)
         f2.pack(fill="x", side="top")
@@ -519,7 +571,6 @@ class App:
         return r
 
     def update_all_open(self):
-
         def get_all_open(tv, p):
             a = {tv.item(p)['values'][0]: tv.item(p)['open']}
             for i in tv.get_children(p):
@@ -532,7 +583,6 @@ class App:
         self.all_open = a
 
     def refresh(self):
-
         def create_item(date={}, p=''):
             if date is None:
                 return
@@ -560,6 +610,7 @@ class App:
         self.SaveConfig()
 
     def __init__(self):
+        self.session = requests.session()
         self.executor_ui = futures.ThreadPoolExecutor(1)
         self.cf = Config(ui_name)
         self.c = Core(self.app_log, self.cf)
