@@ -369,6 +369,7 @@ class App:
         path = os.path.join(save_path, file_name)  # 保存路径和文件名字合并
         with open(path, 'wb') as f:
             f.write(r.content)
+        self.app_log(f'{file_name} -> {save_path}')
 
     def make_name(self, j, index, url):
         username = j['user']['username']
