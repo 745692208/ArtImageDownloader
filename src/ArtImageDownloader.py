@@ -19,7 +19,7 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.3.4.230530 by levosaber'
+ui_version = '1.3.5.236507 by levosaber'
 
 
 # =============================== Config ===============================
@@ -252,13 +252,15 @@ class App:
         return wrapper
 
     def set_perclipText(self):
-        text = '剪切板：{}'.format(pyperclip.paste()[0:75])
+        p = pyperclip.paste()[0:75]
+        text = '剪切板：{}'.format(p)
         if self.useAutoDownload.get() == 1:
             if text not in self.perclipText.get():
                 try:
                     self.on_down_current()
                 except Exception as e:
                     print(e)
+        # 设置最近保存路径提示
         self.perclipText.set(text.replace('\n', '').replace('\r', ''))
         text = '打开最近保存：' + self.c.lastSavePath
         self.lastSaveText.set(text)
@@ -402,6 +404,13 @@ class App:
         url = 'https://www.artstation.com/projects/{}.json'.format(work_id)
         web.open(url)
 
+    def on_down_current_by_json(self):
+        id = self.tv.selection()[0]
+        if id:
+            self.selected_id.set(id)
+            self.tv.selection_set(id)  # 设置tv当前选择项
+        self.download_by_json()
+
     # 新增的临时解决403方案=========================================================
 
     def create_ui(self, master=None):
@@ -511,6 +520,10 @@ class App:
         # 剪切板提醒
         a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
         a.pack(expand="true", fill="x", side="left")
+
+        # 剪切板提醒 下
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
         # 快速下载-----
         a = ttk.Checkbutton(f2, text="自动检测下载", variable=self.useAutoDownload)
         a.pack(side="left")
@@ -522,7 +535,10 @@ class App:
         a = ttk.Button(f2, text='判断是否存在')
         a.configure(command=self.on_if_existing)
         a.pack(side="left")
-        ttk.Button(f2, text='Json Page', command=self.open_page).pack(fill='x', side='top')
+
+        # 临时下载方案
+        ttk.Button(f2, text='Json Page', command=self.open_page).pack(fill='x', side='left')
+        ttk.Button(f2, text='下载 by Json', command=self.on_down_current_by_json).pack(fill='x', side='left')
 
         f2 = ttk.Frame(f)
         f2.pack(fill="x", side="top")
