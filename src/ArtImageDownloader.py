@@ -19,7 +19,7 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = 'Art Image Downloader'
-ui_version = '1.3.5.236507 by levosaber'
+ui_version = '1.3.6.230720 by levosaber'
 
 
 # =============================== Config ===============================
@@ -366,8 +366,9 @@ class App:
         :param url, str, 输入网页地址，如：https://cdna.artstation.com/p/1.jpg ;
         :param file_name, str, 文件保存名字，比如：awaw-5X9mYA-1.jpg ;
         :param save_path. str, 保存地址，比如：E:/asd '''
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.67 Safari/537.36 Edg/87.0.664.47'}
         session = requests.session()
-        r = session.get(url)  # 下载图片
+        r = session.get(url, headers=headers)  # 下载图片
         path = os.path.join(save_path, file_name)  # 保存路径和文件名字合并
         with open(path, 'wb') as f:
             f.write(r.content)
@@ -387,16 +388,20 @@ class App:
             os.makedirs(save_path)
         j = json.loads(pyperclip.paste())
         for i, item in enumerate(j['assets']):
-            if item['asset_type'] == 'image':
-                url = item['image_url']
-            elif item['asset_type'] == 'video_clip':
-                url = re.findall(r"src='(.*?)'", item['player_embedded'])[0]
-                r = self.session.get(url)
-                url = re.findall(r'src="(.*?)" type=', r.text)[0]
-            # 下载
-            name = self.make_name(j, i, url)
-            self.down_file(url, name, save_path)
-            print(name, url)
+            try:
+                if item['asset_type'] in ['image', 'cover']:
+                    url = item['image_url']
+                elif item['asset_type'] == 'video_clip':
+                    url = re.findall(r"src='(.*?)'", item['player_embedded'])[0]
+                    r = self.session.get(url)
+                    url = re.findall(r'src="(.*?)" type=', r.text)[0]
+                # 下载
+                name = self.make_name(j, i, url)
+                self.down_file(url, name, save_path)
+                print(name, url)
+            except Exception as e:
+                print(e)
+                self.app_log(f'Error: {e}')
 
     def open_page(self):
         p = pyperclip.paste()
