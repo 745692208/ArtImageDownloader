@@ -334,12 +334,25 @@ class App:
         self.on_Download()
 
     def on_if_existing(self):
+        def get_exist_path(folder={}, k=""):
+            """:param d dict:{"name": "", "path": "", "folders": [], "files": []}"""
+            if k in str(folder.get("files")):
+                return folder["path"]
+                # r = folder["path"]
+            else:
+                for f in folder["folders"]:
+                    r = get_exist_path(f, k)
+                    if r is not None:
+                        return r
+            return None
+
         code = pyperclip.paste()[-6:]
         path = self.savePath.get()
-        if code in str(self.list_all_dir(path)):
-            self.app_log(f"{code} 已存在！")
+        exist_path = get_exist_path(self.list_all_dir(path), code)
+        if exist_path:
+            self.app_log(f" {code} 已存在, 路径: {exist_path}")
         else:
-            self.app_log(f"{code} 不存在！")
+            self.app_log(f" {code} 不存在!")
 
     def app_log(self, value):
         time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -554,7 +567,7 @@ class App:
         a.configure(command=self.on_down_current)
         a.pack(side="left")
         # btn 是否存在-----
-        a = ttk.Button(f2, text="判断是否存在")
+        a = ttk.Button(f2, text="判断是否存在(A站)")
         a.configure(command=self.on_if_existing)
         a.pack(side="left")
 
@@ -595,16 +608,17 @@ class App:
 
         # 筛选
         if name in self.exclude_list:
-            return
+            return None
 
         all_path = [f"{dirpath}/{i}" for i in os.listdir(dirpath)]
         folders = [i for i in all_path if os.path.isdir(i)]
+        folders = [self.list_all_dir(i) for i in folders]
         files = [i for i in all_path if os.path.isdir(i) is False]
 
         r = {
             "name": name,
             "path": dirpath,
-            "folders": [self.list_all_dir(i) for i in folders],
+            "folders": [i for i in folders if i is not None],
             "files": files,
         }
         return r
