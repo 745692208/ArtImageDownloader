@@ -19,7 +19,7 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = "Art Image Downloader"
-ui_version = "1.3.7.231205 by levosaber"
+ui_version = "1.3.8.231205 by levosaber"
 
 
 # =============================== 计时器 ===============================
