@@ -22,7 +22,7 @@ ui_name = "Art Image Downloader"
 ui_version = "1.3.7.231205 by levosaber"
 
 
-# =============================== Config ===============================
+# =============================== 计时器 ===============================
 class RepeatingTimer(Timer):
     def run(self):
         while not self.finished.is_set():
@@ -30,6 +30,7 @@ class RepeatingTimer(Timer):
             self.finished.wait(self.interval)
 
 
+# =============================== Config ===============================
 class Config:
     def load(self, field, key, *failValue):
         """读取
