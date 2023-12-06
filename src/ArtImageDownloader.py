@@ -216,13 +216,6 @@ class Core:
                 futures_list.append(self.executor.submit(self.down_file, source_media, name, path))
         futures.wait(futures_list)
         self.print_log(f"下载任务已完成：{work_id}\n")
-        # self.print_log(f"Debug: {len(futures_list)}\n")
-        """
-        for i in futures_list:
-            a = i.result()
-            self.print_log(f"下载任务已完成：{str(a)}\n")
-            print(a, "asdasd")
-        """
 
     def custom_name(self, j, file_name):
         if self.isCustomName:
