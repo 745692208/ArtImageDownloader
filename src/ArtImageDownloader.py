@@ -4,6 +4,7 @@ import sys
 import time
 import configparser
 import webbrowser as web
+import json
 
 # GUI
 import tkinter as tk
@@ -11,7 +12,7 @@ import tkinter.ttk as ttk
 from tkinter import messagebox, filedialog
 
 # 多线程
-import threading
+# import threading
 from threading import Timer, Thread
 from concurrent import futures
 
@@ -20,7 +21,6 @@ import pyperclip  # pip install pyperclip
 import requests  # pip install --upgrade urllib3==1.25.2
 from pygame import mixer  # 音频播放, pip install pygame
 
-# import json
 # from multiprocessing import cpu_count
 
 # =============================== 全局变量 ===============================
@@ -30,6 +30,7 @@ ui_version = "1.4.1.250314 by levosaber"
 更新说明:
     1.4.1 - 2025年3月14日
         增加错误提示音效.
+        增加A站额外下载方案, 根据 Json数据.
     1.4.0 - 2025年3月14日
         Artstation增加了识别最大宽度下载4k的功能.
 """
@@ -221,6 +222,11 @@ class Core:
         if j is False:
             return
         j = j.json()
+        self.artstation_download(j)
+
+    def artstation_download(self, j={}):
+        """输入A站的作品页Json数据, 分析内容并下载."""
+        work_id = j["hash_id"]
         assets: list = j["assets"]  # 获取资产
         for i, asset in enumerate(assets):  # 删除多余资产
             if asset["asset_type"] == "cover":
@@ -305,275 +311,12 @@ class App:
     # 子线程
     def run_in_thread(fun):
         def wrapper(*args, **kwargs):
-            thread = Thread(target=fun, args=args, kwargs=kwargs, daemon=True)
-            # thread.daemon = True  # 设置线程为守护线程, 防止退出主线程时, 子线程仍在运行
+            thread = Thread(target=fun, args=args, kwargs=kwargs)
+            thread.daemon = True  # 设置线程为守护线程, 防止退出主线程时, 子线程仍在运行
             thread.start()
             return thread
 
         return wrapper
-
-    def set_perclipText(self):
-        p = pyperclip.paste()[0:75]
-        text = f"剪切板: {p}"
-        if self.useAutoDownload.get() == 1:
-            if text not in self.perclipText.get():
-                try:
-                    self.on_down_current()
-                except Exception as e:
-                    print(e)
-        # 设置最近保存路径提示
-        self.perclipText.set(text.replace("\n", "").replace("\r", ""))
-        text = "打开最近保存: " + self.c.lastSavePath
-        self.lastSaveText.set(text)
-
-    def on_OpenConfig(self):
-        path = os.path.dirname(os.path.realpath(sys.argv[0]))
-        path = path + "/" + ui_name + ".ini"
-        try:
-            os.startfile(path)
-            self.app_log(path)
-        except Exception:
-            self.app_log("没有ini文件, 请先保存ini。")
-
-    def SaveConfig(self):
-        self.cf.save("a", "savePath", self.savePath.get())
-        self.cf.save("a", "isCustomName", str(self.isCustomName.get()))
-        self.cf.save("a", "isCreateFolder", str(self.isCreateFolder.get()))
-        self.cf.save("a", "isDownloadVideo", str(self.isDownloadVideo.get()))
-        self.cf.save("a", "useAutoDownload", str(self.useAutoDownload.get()))
-        self.cf.save("a", "exclude", self.exclude.get())
-        self.update_all_open()
-        self.cf.save("a", "all_open", str(self.all_open))
-
-    def loadConfig(self):
-        self.savePath.set(self.cf.load("a", "savePath", "D:/Test"))
-        self.isCustomName.set(int(self.cf.load("a", "isCustomName", "1")))
-        self.isCreateFolder.set(int(self.cf.load("a", "isCreateFolder", "0")))
-        self.isDownloadVideo.set(int(self.cf.load("a", "isDownloadVideo", "1")))
-        self.useAutoDownload.set(int(self.cf.load("a", "useAutoDownload", "1")))
-        self.c.lastSavePath = self.cf.load("a", "lastSavePath", "D:/Test")
-        self.exclude.set(self.cf.load("a", "exclude", "素模"))
-        self.all_open = eval(self.cf.load("a", "all_open", "{}"))
-
-    def on_OpenLastFolder(self):
-        os.startfile(self.c.lastSavePath)
-        self.app_log(f"打开最近保存文件夹: {self.c.lastSavePath}")
-
-    def on_OpenFolder(self, name=""):
-        path = os.path.join(self.savePath.get(), name)
-        os.startfile(path)
-        self.app_log(f"打开文件夹: {path}")
-
-    def on_Browse(self):
-        dir = os.path.normpath(filedialog.askdirectory())
-        if dir != ".":
-            self.savePath.set(dir)
-            self.SaveConfig()
-
-    def on_down_current(self):
-        id = self.tv.selection()[0]
-        if id:
-            self.selected_id.set(id)
-            self.tv.selection_set(id)  # 设置tv当前选择项
-        self.on_Download()
-
-    def on_if_existing(self):
-        def get_exist_path(folder={}, k=""):
-            """:param d dict:{"name": "", "path": "", "folders": [], "files": []}"""
-            if k in str(folder.get("files")):
-                return folder["path"]
-                # r = folder["path"]
-            else:
-                for f in folder["folders"]:
-                    r = get_exist_path(f, k)
-                    if r is not None:
-                        return r
-            return None
-
-        code = pyperclip.paste()[-6:]
-        path = self.savePath.get()
-        exist_path = get_exist_path(self.list_all_dir(path), code)
-        if exist_path:
-            self.app_log(f" {code} 已存在, 路径: {exist_path}")
-        else:
-            self.app_log(f" {code} 不存在!")
-
-    def app_log(self, value):
-        time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        value = f"[{time_date}]{value}"
-        self.ui_logs_text.configure(state="normal")
-        self.ui_logs_text.insert("end", value + "\n")
-        self.ui_logs_text.see("end")
-        self.ui_logs_text.configure(state="disabled")
-
-    @run_in_thread
-    def on_Download(self):
-        self.SaveConfig()
-        url = pyperclip.paste()
-        self.c.isCustomName = self.isCustomName.get()
-        self.c.isCreateFolder = self.isCreateFolder.get()
-        self.c.isDownloadVideo = self.isDownloadVideo.get()
-        path = self.tv.item(self.selected_id.get())["values"][0]
-        self.c.savePath = path
-        if "zbrushcentral" in url:
-            self.c.zb_get_work(url)
-        elif "artstation" in url:
-            if "artwork" in url:  # 判断是否为单个作品, 否则为用户
-                self.c.get_work(url)
-            else:
-                self.c.get_user_works(url)
-        else:
-            self.app_log("剪切板中信息有误, 无法爬取数据。")
-
-    def create_ui(self, master=None):
-        # build ui
-        ui_main = tk.Tk() if master is None else tk.Toplevel(master)
-        ui_main.title(f"{ui_name} {ui_version}")
-        # build variable
-        self.savePath = tk.StringVar(value="D:/Test")
-        self.isCustomName = tk.IntVar(value=1)
-        self.useAutoDownload = tk.IntVar(value=0)
-        self.isDownloadVideo = tk.IntVar(value=1)
-        self.isCreateFolder = tk.IntVar(value=1)
-        self.lastSavePath = ""
-        self.perclipText = tk.StringVar(value="")
-        self.lastSaveText = tk.StringVar(value="打开最近保存文件夹")
-        self.exclude = tk.StringVar(value="")
-        self.all_open = {}
-        self.loadConfig()
-        # 00 menu -----------------------------------
-        menubar = tk.Menu(ui_main)
-        options = tk.Menu(menubar, tearoff=0)
-        options.add_command(label="Open.ini", command=self.on_OpenConfig)
-        options.add_command(label="Save.ini", command=self.SaveConfig)
-        menubar.add_cascade(label="Options", menu=options)
-        # about
-        about = tk.Menu(menubar, tearoff=0)
-        a = "https://github.com/745692208/ArtImageDownloader"
-        about.add_command(label="Github", command=lambda: web.open(a))
-        about.add_separator()
-        a = "https://www.artstation.com/"
-        about.add_command(label="ArtStion", command=lambda: web.open(a))
-        a = "https://www.zbrushcentral.com/"
-        about.add_command(label="ZBrushcentral", command=lambda: web.open("https://www.zbrushcentral.com/"))
-        menubar.add_cascade(label="About", menu=about)
-        ui_main["menu"] = menubar
-        # 01 options -----------------------------------
-        ui_f1 = ttk.Frame(ui_main)
-        ui_f1.pack(fill="x", side="top")
-        a = ttk.Label(ui_f1, justify="left", text="Save Path: ")
-        a.pack(side="left")
-        a = ttk.Entry(ui_f1, textvariable=self.savePath)
-        a.pack(expand="true", fill="x", side="left")
-        a = ttk.Button(ui_f1, text="浏览", command=self.on_Browse)
-        a.pack(side="left")
-        # btn 打开文件夹-----
-        a = ttk.Button(ui_f1, text="打开文件夹", command=self.on_OpenFolder)
-        a.pack(side="left")
-        # btn 刷新-----
-        a = ttk.Separator(ui_f1, orient="vertical")
-        a.pack(fill="y", padx="5", pady="2", side="left")
-        a = ttk.Button(ui_f1, text="刷新", command=self.refresh)
-        a.pack(side="left")
-        # 02 options -----------------------------------
-        f = ttk.Frame(ui_main)
-        f.pack(fill="x", side="top")
-        a = ttk.Label(f, justify="left", text="排除关键字(','分割): ")
-        a.pack(side="left")
-        a = ttk.Entry(f, textvariable=self.exclude)
-        a.pack(expand="true", fill="x", side="left")
-        # 03 options -----------------------------------
-        ui_f2 = ttk.Frame(ui_main)
-        ui_f2.pack(fill="x", side="top")
-        # cb 自定义命名-----
-        a = ttk.Checkbutton(ui_f2, text="自定义命名", variable=self.isCustomName)
-        a.pack(side="left")
-        # cb 创建文件夹-----
-        a = ttk.Checkbutton(ui_f2, text="创建文件夹", variable=self.isCreateFolder)
-        a.pack(side="left")
-        # cb 下载视频-----
-        a = ttk.Checkbutton(ui_f2, text="下载视频", variable=self.isDownloadVideo)
-        a.pack(side="left")
-        # btn 打开最近保存文件夹-----
-        a = ttk.Button(ui_f2, textvariable=self.lastSaveText)
-        a.configure(command=self.on_OpenLastFolder)
-        a.pack(expand="true", fill="x", side="left")
-
-        # Treeview
-        self.selected_id = tk.StringVar()
-
-        self.right_menu = tk.Menu(tearoff=False)
-        self.right_menu.add_command(label="下载到此", command=self.on_Download)
-        self.right_menu.add_separator()
-        self.right_menu.add_command(label="打开目录", command=self.open_folder)
-
-        f = ttk.LabelFrame(ui_main, text="目录")
-        f.pack(expand="true", fill="both", side="top")
-
-        self.tv = ttk.Treeview(f, show="tree", displaycolumns=(), height=20)
-        self.tv.pack(expand="true", fill="both", side="left")
-        self.tv.bind("<Button-3>", self.on_RightClick)  # 打开右键菜单
-
-        sb = tk.Scrollbar(f)
-        sb.pack(side="left", fill="y")
-        sb["command"] = self.tv.yview
-        self.tv.config(yscrollcommand=sb.set)  # 自动设置滚动条滑动幅度
-
-        self.refresh()
-
-        # 04 logs 日志 -----------------------------------
-        f = ttk.LabelFrame(ui_main, text="日志")
-        f.pack(fill="both", side="top")
-
-        f2 = ttk.Frame(f)
-        f2.pack(fill="x", side="top")
-
-        # 剪切板提醒
-        a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
-        a.pack(expand="true", fill="x", side="left")
-
-        # 剪切板提醒 下
-        f2 = ttk.Frame(f)
-        f2.pack(fill="x", side="top")
-        # 快速下载-----
-        a = ttk.Checkbutton(f2, text="自动检测下载", variable=self.useAutoDownload)
-        a.pack(side="left")
-        # btn 下载-----
-        a = ttk.Button(f2, text="下载到选择项")
-        a.configure(command=self.on_down_current)
-        a.pack(side="left")
-        # btn 是否存在-----
-        a = ttk.Button(f2, text="判断是否存在(A站)")
-        a.configure(command=self.on_if_existing)
-        a.pack(side="left")
-
-        f2 = ttk.Frame(f)
-        f2.pack(fill="x", side="top")
-
-        sb = ttk.Scrollbar(f2)
-        sb.pack(side="right", fill="y")
-        self.ui_logs_text = tk.Text(f2, yscrollcommand=sb.set)
-        self.ui_logs_text.pack(expand="true", fill="both", side="left")
-        self.ui_logs_text.configure(height=10, state="disabled")
-        sb.config(command=self.ui_logs_text.yview)
-
-        # Main widget
-        self.mainwindow = ui_main
-
-    def on_RightClick(self, event):
-        id = self.tv.identify_row(event.y)
-        if id:
-            self.selected_id.set(id)
-            self.tv.selection_set(id)  # 设置tv当前选择项
-            self.right_menu.post(event.x_root, event.y_root)
-
-    def open_folder(self):
-        path = self.tv.item(self.selected_id.get())["values"][0]
-        os.startfile(path)
-
-    def save(self):
-        self.on_Download()
-        pass
 
     def list_all_dir(self, dirpath):
         name = os.path.split(dirpath)[1]
@@ -607,7 +350,154 @@ class App:
             a.update(get_all_open(self.tv, i))
         self.all_open = a
 
-    def refresh(self):
+    def set_perclip_text(self):
+        p = pyperclip.paste()[0:75]
+        text = f"剪切板: {p}"
+        if self.useAutoDownload.get() == 1:
+            if text not in self.perclipText.get():
+                try:
+                    self.on_down_current()
+                except Exception as e:
+                    print(e)
+        # 设置最近保存路径提示
+        self.perclipText.set(text.replace("\n", "").replace("\r", ""))
+        text = "打开最近保存: " + self.c.lastSavePath
+        self.lastSaveText.set(text)
+
+    def app_log(self, value):
+        time_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        value = f"[{time_date}]{value}"
+        self.ui_logs_text.configure(state="normal")
+        self.ui_logs_text.insert("end", value + "\n")
+        self.ui_logs_text.see("end")
+        self.ui_logs_text.configure(state="disabled")
+
+    def save_config(self):
+        self.cf.save("a", "savePath", self.savePath.get())
+        self.cf.save("a", "isCustomName", str(self.isCustomName.get()))
+        self.cf.save("a", "isCreateFolder", str(self.isCreateFolder.get()))
+        self.cf.save("a", "isDownloadVideo", str(self.isDownloadVideo.get()))
+        self.cf.save("a", "useAutoDownload", str(self.useAutoDownload.get()))
+        self.cf.save("a", "exclude", self.exclude.get())
+        self.update_all_open()
+        self.cf.save("a", "all_open", str(self.all_open))
+
+    def load_config(self):
+        self.savePath.set(self.cf.load("a", "savePath", "D:/Test"))
+        self.isCustomName.set(int(self.cf.load("a", "isCustomName", "1")))
+        self.isCreateFolder.set(int(self.cf.load("a", "isCreateFolder", "0")))
+        self.isDownloadVideo.set(int(self.cf.load("a", "isDownloadVideo", "1")))
+        self.useAutoDownload.set(int(self.cf.load("a", "useAutoDownload", "1")))
+        self.c.lastSavePath = self.cf.load("a", "lastSavePath", "D:/Test")
+        self.exclude.set(self.cf.load("a", "exclude", "素模"))
+        self.all_open = eval(self.cf.load("a", "all_open", "{}"))
+
+    def set_core_config(self):
+        self.c.isCustomName = self.isCustomName.get()
+        self.c.isCreateFolder = self.isCreateFolder.get()
+        self.c.isDownloadVideo = self.isDownloadVideo.get()
+        path = self.tv.item(self.selected_id.get())["values"][0]
+        self.c.savePath = path
+
+    def on_open_last_folder(self):
+        os.startfile(self.c.lastSavePath)
+        self.app_log(f"打开最近保存文件夹: {self.c.lastSavePath}")
+
+    def on_open_right_click_folder(self):
+        path = self.tv.item(self.selected_id.get())["values"][0]
+        os.startfile(path)
+
+    def on_open_save_folder(self):
+        path = self.savePath.get()
+        os.startfile(path)
+        self.app_log(f"打开文件夹: {path}")
+
+    def on_open_config(self):
+        path = os.path.dirname(os.path.realpath(sys.argv[0]))
+        path = path + "/" + ui_name + ".ini"
+        try:
+            os.startfile(path)
+            self.app_log(path)
+        except Exception:
+            self.app_log("没有ini文件, 请先保存ini。")
+
+    def on_browse(self):
+        dir = os.path.normpath(filedialog.askdirectory())
+        if dir != ".":
+            self.savePath.set(dir)
+            self.save_config()
+
+    def on_down_current(self):
+        id = self.tv.selection()[0]
+        if id:
+            self.selected_id.set(id)
+            self.tv.selection_set(id)  # 设置tv当前选择项
+        self.on_download()
+
+    def on_if_existing(self):
+        def get_exist_path(folder={}, k=""):
+            """:param d dict:{"name": "", "path": "", "folders": [], "files": []}"""
+            if k in str(folder.get("files")):
+                return folder["path"]
+                # r = folder["path"]
+            else:
+                for f in folder["folders"]:
+                    r = get_exist_path(f, k)
+                    if r is not None:
+                        return r
+            return None
+
+        code = pyperclip.paste()[-6:]
+        path = self.savePath.get()
+        exist_path = get_exist_path(self.list_all_dir(path), code)
+        if exist_path:
+            self.app_log(f" {code} 已存在, 路径: {exist_path}")
+        else:
+            self.app_log(f" {code} 不存在!")
+
+    # 新增的临时解决403方案=========================================================
+
+    def on_open_page(self):
+        """根据剪切板内的作品页面然后打开Json页面."""
+        p = pyperclip.paste()
+        work_id = p.rsplit("/", 1)[1]
+        url = f"https://www.artstation.com/projects/{work_id}.json"
+        web.open(url)
+
+    def on_down_current_by_json(self):
+        """下载剪切板内的Json数据."""
+        id = self.tv.selection()[0]
+        if id:
+            self.selected_id.set(id)
+            self.tv.selection_set(id)  # 设置tv当前选择项
+        self.download_by_json()
+
+    @run_in_thread
+    def download_by_json(self):
+        self.save_config()
+        self.set_core_config()
+        self.c.artstation_download(json.loads(pyperclip.paste()))
+
+    # 新增的临时解决403方案=========================================================
+
+    @run_in_thread
+    def on_download(self):
+        self.save_config()
+        self.set_core_config()
+        url = pyperclip.paste()
+        if "zbrushcentral" in url:
+            self.c.zb_get_work(url)
+        elif "artstation" in url:
+            if "artwork" in url:  # 判断是否为单个作品, 否则为用户
+                self.c.get_work(url)
+            else:
+                self.c.get_user_works(url)
+        else:
+            self.app_log("剪切板中信息有误, 无法爬取数据。")
+
+    def on_refresh(self):
+        """刷新按钮, 主要刷新树状图, 程序运行初也会运行一次"""
+
         def create_item(date={}, p=""):
             if date is None:
                 return
@@ -632,7 +522,155 @@ class App:
         if os.path.exists(path):
             for d in self.list_all_dir(path)["folders"]:
                 create_item(d)
-        self.SaveConfig()
+        self.save_config()
+
+    def on_right_click(self, event):
+        id = self.tv.identify_row(event.y)
+        if id:
+            self.selected_id.set(id)
+            self.tv.selection_set(id)  # 设置tv当前选择项
+            self.right_menu.post(event.x_root, event.y_root)
+
+    def create_ui(self, master=None):
+        # build ui
+        ui_main = tk.Tk() if master is None else tk.Toplevel(master)
+        ui_main.title(f"{ui_name} {ui_version}")
+        # build variable
+        self.savePath = tk.StringVar(value="D:/Test")
+        self.isCustomName = tk.IntVar(value=1)
+        self.useAutoDownload = tk.IntVar(value=0)
+        self.isDownloadVideo = tk.IntVar(value=1)
+        self.isCreateFolder = tk.IntVar(value=1)
+        self.lastSavePath = ""
+        self.perclipText = tk.StringVar(value="")
+        self.lastSaveText = tk.StringVar(value="打开最近保存文件夹")
+        self.exclude = tk.StringVar(value="")
+        self.all_open = {}
+        self.load_config()
+        # 00 menu -----------------------------------
+        menubar = tk.Menu(ui_main)
+        options = tk.Menu(menubar, tearoff=0)
+        options.add_command(label="Open.ini", command=self.on_open_config)
+        options.add_command(label="Save.ini", command=self.save_config)
+        menubar.add_cascade(label="Options", menu=options)
+        # about
+        about = tk.Menu(menubar, tearoff=0)
+        a = "https://github.com/745692208/ArtImageDownloader"
+        about.add_command(label="Github", command=lambda: web.open(a))
+        about.add_separator()
+        a = "https://www.artstation.com/"
+        about.add_command(label="ArtStion", command=lambda: web.open(a))
+        a = "https://www.zbrushcentral.com/"
+        about.add_command(label="ZBrushcentral", command=lambda: web.open("https://www.zbrushcentral.com/"))
+        menubar.add_cascade(label="About", menu=about)
+        ui_main["menu"] = menubar
+        # 01 options -----------------------------------
+        ui_f1 = ttk.Frame(ui_main)
+        ui_f1.pack(fill="x", side="top")
+        a = ttk.Label(ui_f1, justify="left", text="Save Path: ")
+        a.pack(side="left")
+        a = ttk.Entry(ui_f1, textvariable=self.savePath)
+        a.pack(expand="true", fill="x", side="left")
+        a = ttk.Button(ui_f1, text="浏览", command=self.on_browse)
+        a.pack(side="left")
+        # btn 打开文件夹-----
+        a = ttk.Button(ui_f1, text="打开文件夹", command=self.on_open_save_folder)
+        a.pack(side="left")
+        # btn 刷新-----
+        a = ttk.Separator(ui_f1, orient="vertical")
+        a.pack(fill="y", padx="5", pady="2", side="left")
+        a = ttk.Button(ui_f1, text="刷新", command=self.on_refresh)
+        a.pack(side="left")
+        # 02 options -----------------------------------
+        f = ttk.Frame(ui_main)
+        f.pack(fill="x", side="top")
+        a = ttk.Label(f, justify="left", text="排除关键字(','分割): ")
+        a.pack(side="left")
+        a = ttk.Entry(f, textvariable=self.exclude)
+        a.pack(expand="true", fill="x", side="left")
+        # 03 options -----------------------------------
+        ui_f2 = ttk.Frame(ui_main)
+        ui_f2.pack(fill="x", side="top")
+        # cb 自定义命名-----
+        a = ttk.Checkbutton(ui_f2, text="自定义命名", variable=self.isCustomName)
+        a.pack(side="left")
+        # cb 创建文件夹-----
+        a = ttk.Checkbutton(ui_f2, text="创建文件夹", variable=self.isCreateFolder)
+        a.pack(side="left")
+        # cb 下载视频-----
+        a = ttk.Checkbutton(ui_f2, text="下载视频", variable=self.isDownloadVideo)
+        a.pack(side="left")
+        # btn 打开最近保存文件夹-----
+        a = ttk.Button(ui_f2, textvariable=self.lastSaveText)
+        a.configure(command=self.on_open_last_folder)
+        a.pack(expand="true", fill="x", side="left")
+
+        # Treeview
+        self.selected_id = tk.StringVar()
+
+        # 右键菜单
+        self.right_menu = tk.Menu(tearoff=False)
+        self.right_menu.add_command(label="下载到此", command=self.on_download)
+        self.right_menu.add_command(label="下载到此 by Json", command=self.download_by_json)
+        self.right_menu.add_separator()
+        self.right_menu.add_command(label="打开目录", command=self.on_open_right_click_folder)
+
+        f = ttk.LabelFrame(ui_main, text="目录")
+        f.pack(expand="true", fill="both", side="top")
+
+        self.tv = ttk.Treeview(f, show="tree", displaycolumns=(), height=20)
+        self.tv.pack(expand="true", fill="both", side="left")
+        self.tv.bind("<Button-3>", self.on_right_click)  # 打开右键菜单
+
+        sb = tk.Scrollbar(f)
+        sb.pack(side="left", fill="y")
+        sb["command"] = self.tv.yview
+        self.tv.config(yscrollcommand=sb.set)  # 自动设置滚动条滑动幅度
+
+        self.on_refresh()
+
+        # 04 logs 日志 -----------------------------------
+        f = ttk.LabelFrame(ui_main, text="日志")
+        f.pack(fill="both", side="top")
+
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
+
+        # 剪切板提醒
+        a = ttk.Label(f2, justify="left", textvariable=self.perclipText)
+        a.pack(expand="true", fill="x", side="left")
+
+        # 剪切板提醒 下
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
+        # 快速下载-----
+        a = ttk.Checkbutton(f2, text="自动检测下载", variable=self.useAutoDownload)
+        a.pack(side="left")
+        # btn 下载-----
+        a = ttk.Button(f2, text="下载到选择项")
+        a.configure(command=self.on_down_current)
+        a.pack(side="left")
+        # btn 是否存在-----
+        a = ttk.Button(f2, text="判断是否存在(A站)")
+        a.configure(command=self.on_if_existing)
+        a.pack(side="left")
+
+        # Error时下载方案
+        ttk.Button(f2, text="Json Page", command=self.on_open_page).pack(fill="x", side="left")
+        ttk.Button(f2, text="下载 by Json", command=self.on_down_current_by_json).pack(fill="x", side="left")
+
+        f2 = ttk.Frame(f)
+        f2.pack(fill="x", side="top")
+
+        sb = ttk.Scrollbar(f2)
+        sb.pack(side="right", fill="y")
+        self.ui_logs_text = tk.Text(f2, yscrollcommand=sb.set)
+        self.ui_logs_text.pack(expand="true", fill="both", side="left")
+        self.ui_logs_text.configure(height=10, state="disabled")
+        sb.config(command=self.ui_logs_text.yview)
+
+        # Main widget
+        self.mainwindow = ui_main
 
     def __init__(self):
         self.session = requests.session()
@@ -640,20 +678,18 @@ class App:
         self.c = Core(self.app_log, self.cf)
         self.create_ui()
         # 剪切板信息实时刷新
-        self.t = RepeatingTimer(1, self.set_perclipText)
+        self.t = RepeatingTimer(1, self.set_perclip_text)
         self.t.name = "Thread-PerclipText"
+        self.t.daemon = True
         self.t.start()
 
 
 if __name__ == "__main__":
     app = App()
     app.mainwindow.mainloop()
+    # app.mainwindow.quit()  # 只是退出主事件循环，不会销毁窗口.
     app.t.cancel()
-    time.sleep(1)
-
-    # 检查所有线程
-    for thread in threading.enumerate():
-        if thread != threading.main_thread():
-            thread.join()
-
-    sys.exit()
+    # app.mainwindow.destroy()  # 会销毁窗口及其资源.
+    # time.sleep(1)  # 没有必要
+    # sys.exit(0)  # 退出程序
+    os._exit(0)  # 强制退出（不会执行到这里）
