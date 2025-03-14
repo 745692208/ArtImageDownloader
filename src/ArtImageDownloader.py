@@ -1,28 +1,39 @@
-import tkinter as tk
-import tkinter.ttk as ttk
-from tkinter import messagebox, filedialog
 import os
 import re
 import sys
 import time
 import configparser
 import webbrowser as web
+
+# GUI
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import messagebox, filedialog
+
+# 多线程
+import threading
 from threading import Timer, Thread
 from concurrent import futures
+
+# 其它库
 import pyperclip  # pip install pyperclip
 import requests  # pip install --upgrade urllib3==1.25.2
+from pygame import mixer  # 音频播放, pip install pygame
 
 # import json
 # from multiprocessing import cpu_count
 
 # =============================== 全局变量 ===============================
 ui_name = "Art Image Downloader"
-ui_version = "1.4.0.250314 by levosaber"
+ui_version = "1.4.1.250314 by levosaber"
 """
 更新说明:
+    1.4.1 - 2025年3月14日
+        增加错误提示音效.
     1.4.0 - 2025年3月14日
         Artstation增加了识别最大宽度下载4k的功能.
 """
+mixer.init()
 
 
 # =============================== 计时器 ===============================
@@ -92,6 +103,21 @@ class Core:
         self.lastSavePath = ""
 
     # 工具 ------------------
+    def play_sound(self):
+        # 获取音效文件的路径（支持打包后的资源访问）
+        if getattr(sys, "frozen", False):
+            # 如果是打包后的可执行文件
+            base_path = sys._MEIPASS
+        else:
+            # 如果是普通脚本
+            base_path = os.path.dirname(__file__)
+        sound_path = os.path.join(base_path, r"res\error.mp3")
+
+        # 加载音效文件
+        mixer.music.load(sound_path)
+        # 播放音效
+        mixer.music.play()
+
     def print_log(self, str):
         if self.app_print:
             self.app_print(str)
@@ -108,10 +134,16 @@ class Core:
                 return r
             elif r.status_code == 403:
                 self.print_log("网络连接失败, 错误: 403;")
-                return False
+            elif r.status_code == 429:
+                self.print_log("网络连接失败, 错误: 429, 短时间了请求过多被服务器拒绝;")
+            else:
+                self.print_log(f"未知结果, Error: {r.status_code};")
         except Exception as e:
             self.print_log(f"Error: {e};")
-            return False
+
+        # 能走到这都是错误
+        self.play_sound()
+        return False
 
     def down_file(self, url, file_name, save_path):  # 下载图片
         """下载输入的网址文件, 并对其命名, 保存到指定位置。
@@ -273,8 +305,8 @@ class App:
     # 子线程
     def run_in_thread(fun):
         def wrapper(*args, **kwargs):
-            thread = Thread(target=fun, args=args, kwargs=kwargs)
-            thread.daemon = True  # 设置线程为守护线程, 防止退出主线程时, 子线程仍在运行
+            thread = Thread(target=fun, args=args, kwargs=kwargs, daemon=True)
+            # thread.daemon = True  # 设置线程为守护线程, 防止退出主线程时, 子线程仍在运行
             thread.start()
             return thread
 
@@ -618,4 +650,10 @@ if __name__ == "__main__":
     app.mainwindow.mainloop()
     app.t.cancel()
     time.sleep(1)
+
+    # 检查所有线程
+    for thread in threading.enumerate():
+        if thread != threading.main_thread():
+            thread.join()
+
     sys.exit()
