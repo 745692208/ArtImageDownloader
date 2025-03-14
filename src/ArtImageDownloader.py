@@ -17,7 +17,12 @@ import requests  # pip install --upgrade urllib3==1.25.2
 
 # =============================== 全局变量 ===============================
 ui_name = "Art Image Downloader"
-ui_version = "1.3.9.231205 by levosaber"
+ui_version = "1.4.0.250314 by levosaber"
+"""
+更新说明:
+    1.4.0 - 2025年3月14日
+        Artstation增加了识别最大宽度下载4k的功能.
+"""
 
 
 # =============================== 计时器 ===============================
@@ -32,7 +37,7 @@ class RepeatingTimer(Timer):
 class Config:
     def load(self, field, key, *failValue):
         """读取
-        :param *failValue, None, 读取失败后，返回的值。默认返回'';"""
+        :param *failValue, None, 读取失败后, 返回的值。默认返回'';"""
         if len(failValue) == 0:
             failValue = ""
         else:
@@ -62,7 +67,7 @@ class Config:
         return True
 
     def __init__(self, name):
-        """Config使用整合，通过设置ini文件路径，使用save、load方法，即可便捷使用。
+        """Config使用整合, 通过设置ini文件路径, 使用save、load方法, 即可便捷使用。
         :param name, str, 默认文件夹和ini的名字。"""
         self.cf = configparser.ConfigParser()
         self.path = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -98,7 +103,7 @@ class Core:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"}
         try:
             r = self.session.get(url, headers=headers)
-            self.print_log("网络连接成功，正在分析数据，请稍等...")
+            self.print_log("网络连接成功, 正在分析数据, 请稍等...")
             if r.status_code == 200:
                 return r
             elif r.status_code == 403:
@@ -109,28 +114,28 @@ class Core:
             return False
 
     def down_file(self, url, file_name, save_path):  # 下载图片
-        """下载输入的网址文件，并对其命名，保存到指定位置。
-        :param url, str, 输入网页地址，如：https://cdna.artstation.com/p/1.jpg ;
-        :param file_name, str, 文件保存名字，比如：awaw-5X9mYA-1.jpg ;
-        :param save_path. str, 保存地址，比如：E:/asd"""
+        """下载输入的网址文件, 并对其命名, 保存到指定位置。
+        :param url, str, 输入网页地址, 如: https://cdna.artstation.com/p/1.jpg ;
+        :param file_name, str, 文件保存名字, 比如: awaw-5X9mYA-1.jpg ;
+        :param save_path. str, 保存地址, 比如: E:/asd"""
         r = self.session.get(url)  # 下载图片
         path = os.path.join(save_path, file_name)  # 保存路径和文件名字合并
         with open(path, "wb") as f:
             f.write(r.content)
 
     def make_name(slef, name, index, format):
-        """通过输入的参数，合成名字，name1-name2-index.format
-        :param index, int, 请输入0开始的，因为会自动+1"""
+        """通过输入的参数, 合成名字, name1-name2-index.format
+        :param index, int, 请输入0开始的, 因为会自动+1"""
         return f"{name}-{index + 1}.{format}"
 
     def make_save_path(slef, name):
-        """输入名字并判断是否需要创建文件夹，最终制作保存路径"""
+        """输入名字并判断是否需要创建文件夹, 最终制作保存路径"""
         if slef.isCreateFolder:
             return os.path.join(slef.savePath, name)
         return slef.savePath
 
     def check_make_dir(self, path):
-        """检查输入的路径是否有效，无效则尝试创建文件夹，最终成功后保存路径"""
+        """检查输入的路径是否有效, 无效则尝试创建文件夹, 最终成功后保存路径"""
         self.lastSavePath = path
         self.cf.save("a", "lastSavePath", path)
         if os.path.exists(path):
@@ -138,7 +143,7 @@ class Core:
         else:
             try:
                 os.makedirs(path, exist_ok=True)
-                self.print_log(f"保存地址：{path}")
+                self.print_log(f"保存地址: {path}")
                 return True
             except Exception as e:
                 messagebox.showerror("错误", "请输入正确的文件夹路径！")
@@ -148,12 +153,12 @@ class Core:
     # A站 ------------------
     def get_user_works(self, url):  # 获取用户的所有作品
         """
-        :param url, str, 网页地址，比如：https://www.artstation.com/pouria_roshan
+        :param url, str, 网页地址, 比如: https://www.artstation.com/pouria_roshan
         """
-        self.print_log("分析中，请不要进行操作...")
+        self.print_log("分析中, 请不要进行操作...")
         username = url.split("/")[-1]
         data = []
-        page = 0  # 一页最大data数为50，0~49，page为1起步
+        page = 0  # 一页最大data数为50, 0~49, page为1起步
         while True:
             page += 1
             url = f"https://www.artstation.com/users/{username}/projects.json?page={page}"
@@ -165,7 +170,7 @@ class Core:
             data += j["data"]
             if page > total_count / 50:
                 break
-        self.print_log(f"作者：{username}，共计{len(data)}个作品，现进行作品分析... ")
+        self.print_log(f"作者: {username}, 共计{len(data)}个作品, 现进行作品分析... ")
         futures_list = []
         for wrok in data:
             futures_list.append(self.executor.submit(self.get_work, wrok["permalink"]))
@@ -175,34 +180,40 @@ class Core:
     def get_work(self, url):
         """
         获取单独作品
-        :param url, str, 网页地址，比如：https://www.artstation.com/artwork/5X9mYA ;"""
+        :param url, str, 网页地址, 比如: https://www.artstation.com/artwork/5X9mYA ;"""
         # 获取json资产数据
-        self.print_log(f"分析网址：{url}，请稍等...")
+        self.print_log(f"分析网址: {url}, 请稍等...")
         work_id = url.rsplit("/", 1)[1]
         url = f"https://www.artstation.com/projects/{work_id}.json"
         j = self.session_get(url)
         if j is False:
             return
         j = j.json()
-        assets = j["assets"]  # 获取资产
+        assets: list = j["assets"]  # 获取资产
         for i, asset in enumerate(assets):  # 删除多余资产
             if asset["asset_type"] == "cover":
                 del assets[i]
         # 创建文件夹
-        title = j["title"].strip()  # 获取标题
+        title: str = j["title"].strip()  # 获取标题
         title = re.sub(r'[/\:*?"<>|]', "", title)  # 去除标题特殊符号
         work_name = self.custom_name(j, work_id)  # pouria_roshan-5X9mYA
         path = self.make_save_path(title)  # D:\python\down\Buttercup
         self.check_make_dir(path)
         # 3 资产数据分析
-        self.print_log(f"分析完毕, 作品: {title}，现进行下载...")
+        self.print_log(f"分析完毕, 作品: {title}, 现进行下载...")
         futures_list = []
         for i, asset in enumerate(assets):
             if asset["asset_type"] == "image":
-                url = asset["image_url"].rsplit("?", 1)[0]
+                url: str = asset["image_url"].rsplit("?", 1)[0]
                 file_format = url.rsplit(".", 1)[1]  # .jpg
                 name = self.make_name(work_name, i, file_format)
-                self.print_log(f"图片：{url}")
+                if asset["width"] > 1920 and "large" in url:
+                    # 好像不是会员时上传不了4k图的. 先这样吧, 若有问题在改便是.
+                    url = url.replace("large", "4k")
+                    self.print_log(f"图片4k: {url}")
+                    print(f"{url}的宽度大于1920, 替换成4k.")
+                else:
+                    self.print_log(f"图片: {url}")
                 futures_list.append(self.executor.submit(self.down_file, url, name, path))
             elif asset["asset_type"] == "video_clip" and self.isDownloadVideo:
                 url = re.findall(r"src='(.*?)'", asset["player_embedded"])[0]
@@ -212,10 +223,10 @@ class Core:
                 source_media = re.findall(r'src="(.*?)" type=', r.text)[0]
                 file_format = source_media.rsplit(".", 1)[1]  # .jpg
                 name = self.make_name(work_name, i, file_format)
-                self.print_log(f"视频：{source_media}")
+                self.print_log(f"视频: {source_media}")
                 futures_list.append(self.executor.submit(self.down_file, source_media, name, path))
         futures.wait(futures_list)
-        self.print_log(f"下载任务已完成：{work_id}\n")
+        self.print_log(f"下载任务已完成: {work_id}\n")
 
     def custom_name(self, j, file_name):
         if self.isCustomName:
@@ -228,7 +239,7 @@ class Core:
 
     # zb ------------------
     def zb_get_work(self, url):
-        self.print_log(f"分析网址：{url}，请稍等...")
+        self.print_log(f"分析网址: {url}, 请稍等...")
         r = self.session_get(url)
         if r is False:
             return
@@ -242,7 +253,7 @@ class Core:
         for i, url in enumerate(urls):
             url = "https://" + url
             name = self.make_name(work_name, i, "jpeg")
-            self.print_log(f"图片：{url}")
+            self.print_log(f"图片: {url}")
             futures_list.append(self.executor.submit(self.down_file, url, name, path))
         # 视频
         if self.isDownloadVideo:
@@ -251,10 +262,10 @@ class Core:
             for i, video_url in enumerate(urls_video):
                 video_url = "https://www" + video_url + "mp4"
                 name = self.make_name(work_name, i, "mp4")
-                self.print_log(f"视频：{video_url}")
+                self.print_log(f"视频: {video_url}")
                 futures_list.append(self.executor.submit(self.down_file, video_url, name, path))
         futures.wait(futures_list)
-        self.print_log(f"下载任务已完成：{work_name}\n")
+        self.print_log(f"下载任务已完成: {work_name}\n")
 
 
 # =============================== App ===============================
@@ -263,7 +274,7 @@ class App:
     def run_in_thread(fun):
         def wrapper(*args, **kwargs):
             thread = Thread(target=fun, args=args, kwargs=kwargs)
-            thread.daemon = True  # 设置线程为守护线程，防止退出主线程时，子线程仍在运行
+            thread.daemon = True  # 设置线程为守护线程, 防止退出主线程时, 子线程仍在运行
             thread.start()
             return thread
 
@@ -271,7 +282,7 @@ class App:
 
     def set_perclipText(self):
         p = pyperclip.paste()[0:75]
-        text = f"剪切板：{p}"
+        text = f"剪切板: {p}"
         if self.useAutoDownload.get() == 1:
             if text not in self.perclipText.get():
                 try:
@@ -280,7 +291,7 @@ class App:
                     print(e)
         # 设置最近保存路径提示
         self.perclipText.set(text.replace("\n", "").replace("\r", ""))
-        text = "打开最近保存：" + self.c.lastSavePath
+        text = "打开最近保存: " + self.c.lastSavePath
         self.lastSaveText.set(text)
 
     def on_OpenConfig(self):
@@ -290,7 +301,7 @@ class App:
             os.startfile(path)
             self.app_log(path)
         except Exception:
-            self.app_log("没有ini文件，请先保存ini。")
+            self.app_log("没有ini文件, 请先保存ini。")
 
     def SaveConfig(self):
         self.cf.save("a", "savePath", self.savePath.get())
@@ -314,12 +325,12 @@ class App:
 
     def on_OpenLastFolder(self):
         os.startfile(self.c.lastSavePath)
-        self.app_log(f"打开最近保存文件夹：{self.c.lastSavePath}")
+        self.app_log(f"打开最近保存文件夹: {self.c.lastSavePath}")
 
     def on_OpenFolder(self, name=""):
         path = os.path.join(self.savePath.get(), name)
         os.startfile(path)
-        self.app_log(f"打开文件夹：{path}")
+        self.app_log(f"打开文件夹: {path}")
 
     def on_Browse(self):
         dir = os.path.normpath(filedialog.askdirectory())
@@ -375,12 +386,12 @@ class App:
         if "zbrushcentral" in url:
             self.c.zb_get_work(url)
         elif "artstation" in url:
-            if "artwork" in url:  # 判断是否为单个作品，否则为用户
+            if "artwork" in url:  # 判断是否为单个作品, 否则为用户
                 self.c.get_work(url)
             else:
                 self.c.get_user_works(url)
         else:
-            self.app_log("剪切板中信息有误，无法爬取数据。")
+            self.app_log("剪切板中信息有误, 无法爬取数据。")
 
     def create_ui(self, master=None):
         # build ui
@@ -418,7 +429,7 @@ class App:
         # 01 options -----------------------------------
         ui_f1 = ttk.Frame(ui_main)
         ui_f1.pack(fill="x", side="top")
-        a = ttk.Label(ui_f1, justify="left", text="Save Path：")
+        a = ttk.Label(ui_f1, justify="left", text="Save Path: ")
         a.pack(side="left")
         a = ttk.Entry(ui_f1, textvariable=self.savePath)
         a.pack(expand="true", fill="x", side="left")
@@ -435,7 +446,7 @@ class App:
         # 02 options -----------------------------------
         f = ttk.Frame(ui_main)
         f.pack(fill="x", side="top")
-        a = ttk.Label(f, justify="left", text="排除关键字(','分割)：")
+        a = ttk.Label(f, justify="left", text="排除关键字(','分割): ")
         a.pack(side="left")
         a = ttk.Entry(f, textvariable=self.exclude)
         a.pack(expand="true", fill="x", side="left")
@@ -568,7 +579,7 @@ class App:
         def create_item(date={}, p=""):
             if date is None:
                 return
-            # 指定插入位置，0表示在头部插入，end表示在尾部插入。
+            # 指定插入位置, 0表示在头部插入, end表示在尾部插入。
             v = date["path"].replace("\\", "/")
             p = self.tv.insert(p, "end", text=date["name"], values=[v])
             if self.all_open.get(v):
