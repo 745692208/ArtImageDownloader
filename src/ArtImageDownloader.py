@@ -134,13 +134,13 @@ class Core:
             if r.status_code == 200:
                 return r
             elif r.status_code == 403:
-                self.print_log("网络连接失败, 错误: 403;")
+                self.print_log(f"网络连接失败: {url}, Error: {r.status_code};")
             elif r.status_code == 429:
-                self.print_log("网络连接失败, 错误: 429, 短时间了请求过多被服务器拒绝;")
+                self.print_log(f"网络连接失败: {url}, Error: {r.status_code}, 短时间了请求过多被服务器拒绝;")
             else:
-                self.print_log(f"未知结果, Error: {r.status_code};")
+                self.print_log(f"网络连接失败: {url}, Error: {r.status_code};")
         except Exception as e:
-            self.print_log(f"Error: {e};")
+            self.print_log(f"网络连接失败: {url}, Error: {e};")
 
         # 能走到这都是错误
         self.play_sound()
