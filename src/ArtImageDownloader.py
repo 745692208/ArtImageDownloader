@@ -104,7 +104,7 @@ class Core:
         self.lastSavePath = ""
 
     # 工具 ------------------
-    def play_sound(self):
+    def play_sound(self, index=0):
         # 获取音效文件的路径（支持打包后的资源访问）
         if getattr(sys, "frozen", False):
             # 如果是打包后的可执行文件
@@ -112,7 +112,11 @@ class Core:
         else:
             # 如果是普通脚本
             base_path = os.path.dirname(__file__)
-        sound_path = os.path.join(base_path, r"res\error.mp3")
+        filepaths = [
+            r"res\error.mp3",
+            r"res\bring.mp3",
+        ]
+        sound_path = os.path.join(base_path, filepaths[index])
 
         # 加载音效文件
         mixer.music.load(sound_path)
@@ -208,7 +212,8 @@ class Core:
         for wrok in data:
             futures_list.append(self.executor.submit(self.get_work, wrok["permalink"]))
         futures.wait(futures_list)
-        self.print_log("爬取用户作品的下载任务已全部完成；\n")
+        self.print_log("爬取用户作品的下载任务已全部完成;\n")
+        self.play_sound(1)
 
     def get_work(self, url):
         """
@@ -265,6 +270,7 @@ class Core:
                 futures_list.append(self.executor.submit(self.down_file, source_media, name, path))
         futures.wait(futures_list)
         self.print_log(f"下载任务已完成: {work_id}\n")
+        self.play_sound(1)
 
     def custom_name(self, j, file_name):
         if self.isCustomName:
@@ -304,6 +310,7 @@ class Core:
                 futures_list.append(self.executor.submit(self.down_file, video_url, name, path))
         futures.wait(futures_list)
         self.print_log(f"下载任务已完成: {work_name}\n")
+        self.play_sound(1)
 
 
 # =============================== App ===============================
